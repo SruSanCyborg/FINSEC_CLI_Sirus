@@ -90,7 +90,10 @@ echo
   printf 'q';          sleep 3
   printf '/watch .\r'; sleep 6
   printf '\003';       sleep 5
-  printf '/rules list\r'; sleep 4
+  # Something only this command prints, so the check below cannot be satisfied
+  # by output from before the Ctrl-C: it was, while that Ctrl-C was killing the
+  # inline shell outright.
+  printf '/rules show SIR-SEC-041\r'; sleep 4
   printf '/exit\r'
   sleep 2
 } | (cd "$STAGE" && SIRUS_REVENUE_PACE=12 SIRUS_SCAN_PACE=40 script -q /dev/null node "$CLI") >"$OUT" 2>&1 &
@@ -151,7 +154,7 @@ check "/watch handover"          "handed the terminal to /watch"
 check "/watch came back"         "/watch finished"
 # Not "12 rules": the catalogue grows, and a marker pinned to its size fails the
 # day a rule is added, reporting a broken handover that is nothing of the kind.
-check "shell alive afterwards"   "rules · local engine"
+check "shell alive afterwards"   "fix action:[[:space:]]+enforce_tls"
 
 echo
 # A command that fails prints `error:` into the transcript. Any at all is worth

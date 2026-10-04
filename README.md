@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/@srusan/sirus"><img src="https://img.shields.io/npm/v/%40srusan%2Fsirus?color=cb3837&logo=npm&label=npm" alt="npm version"></a>
   <a href="https://github.com/SruSanCyborg/FINSEC_CLI_Sirus/actions/workflows/ci.yml"><img src="https://github.com/SruSanCyborg/FINSEC_CLI_Sirus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/tests-871%20passing-brightgreen" alt="871 tests passing">
+  <img src="https://img.shields.io/badge/tests-878%20passing-brightgreen" alt="878 tests passing">
   <img src="https://img.shields.io/badge/node-%E2%89%A522-339933?logo=node.js&logoColor=white" alt="Node 22+">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey" alt="macOS, Linux, Windows">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/SruSanCyborg/FINSEC_CLI_Sirus?color=blue" alt="MIT license"></a>
@@ -383,13 +383,16 @@ Suppressions require a reason and an expiry; an expired one brings the finding b
 |---|---|
 | `SIRUS_ASCII=1` | Pure ASCII output — `₹` becomes `Rs.`, box drawing becomes `+-\|` |
 | `NO_COLOR=1` | No colour |
+| `SIRUS_FULLSCREEN=1` | Open the shell full screen, with a pinned input and in-app scrolling (default is inline, in your normal scrollback) |
 | `SIRUS_SCAN_PACE` · `SIRUS_REVENUE_PACE` | Output pacing in ms; `0` disables (off automatically for `--json`, pipes and CI) |
 
 </details>
 
 ## Commands
 
-Run `sirus` with no arguments for the interactive shell, where every command also works as `/command`.
+Everything runs from one place: type `sirus` to open the interactive shell, then use any command below as
+`/command` — guard, scan, revenue and reconcile in the same session, with your terminal's normal scrollback. Each
+command also works directly as `sirus <command>`.
 
 | Command | What it does |
 |---|---|
@@ -424,7 +427,7 @@ Every command has `--help`.
 ```bash
 pnpm install
 pnpm build          # tsc → packages/cli/dist
-pnpm test           # vitest — 871 tests
+pnpm test           # vitest — 878 tests
 pnpm rehearse       # drive the real shell in a real terminal
 ```
 

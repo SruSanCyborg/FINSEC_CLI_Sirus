@@ -1,6 +1,6 @@
 {
   "name": "@srusan/sirus",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Sirus by SruSan: a security and control layer for AI agents that move money, and a compliance linter for money-handling code. Runs locally, no account.",
   "keywords": [
     "security",

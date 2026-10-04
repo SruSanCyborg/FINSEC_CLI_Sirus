@@ -18,7 +18,7 @@ import type { ExitCodeValue } from './domain.js';
 // profile behind it, so this is the only chance GROQ_API_KEY has of reaching it.
 loadEnvFile();
 
-const VERSION = '0.4.0';
+const VERSION = '0.4.1';
 
 function severityArg(value: string): string {
   if (!SEVERITIES.includes(value as never)) {

@@ -250,7 +250,10 @@ export function ApplyPrompt({ glyphs, capabilities, disabled = false, onChoice }
       onChoice('skip');
       return;
     }
-    const ch = input.toLowerCase();
+    // A terminal can deliver the key and the Enter after it as one chunk —
+    // `y\r` — when typing is fast or the input is piped, and compared whole
+    // that is not `y`, so the prompt ignored the answer and nothing applied.
+    const ch = input.replace(/[\r\n]/g, '').toLowerCase();
     if (ch === 'y') onChoice('accept');
     else if (ch === 'n' || key.escape) onChoice('skip');
     else if (ch === 'e') onChoice('edit');

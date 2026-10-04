@@ -231,7 +231,7 @@ node packages/cli/dist/cli.js scan contract/fixtures/chaos-repo \
 | **`revenue sweep`** | Done — the same evaluation over N seeded batches, `--save`/`--against` for regressions |
 | **`revenue stress`** | Done — six distribution shifts applied to the generator; the money edge holds in 3 of 6, the compliance rule in 6 of 6 |
 | **`reconcile`** | Done — 5-tier matcher over 3 sets of books, match rate + verified accuracy + exceptions |
-| Tests | 871 passing |
+| Tests | 878 passing |
 
 **The API is required for nothing.** `rules test` and PDF reports were the last
 two holdouts and both reasons were wrong. `rules test` — it did not need an
@@ -383,7 +383,18 @@ that wraps into the row beneath and stops being a table, while every character
 is still present, so nothing fails. `render-width.test.ts` checks 60/80/100/120
 and colour. See D-032.
 
-**`/triage` runs inline, in a panel above the prompt.** It asks a question with
+**`sirus` opens the inline shell; full screen is opt-in (D-059).** Customers
+could not scroll the terminal back to the wordmark, and lost the whole session —
+and their history from *before* `sirus` — on leaving, because the full-screen
+shell lived in the alternate buffer and entered it with ESC[3J, which erases
+scrollback. The inline shell prints into ordinary scrollback, hands each command
+the real terminal, and leaves everything where it was. `SIRUS_FULLSCREEN=1`
+brings back the pinned-input viewer, which now never erases scrollback and
+writes its transcript back to the normal screen on exit. `pnpm shell:check` and
+`pnpm rehearse` drive whichever mode is the default; run them again with
+`SIRUS_FULLSCREEN=1` to cover the other. Both green at the time of writing.
+
+**In full screen, `/triage` runs inline, in a panel above the prompt.** It asks a question with
 a few answers, and a question is not a reason to take the terminal: the
 transcript stays visible, the scan you are triaging is still above it, and one
 keypress decides. `k` walks back to anything already answered — the queue holds

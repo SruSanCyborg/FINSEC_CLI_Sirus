@@ -18,10 +18,11 @@ const ENTER_ALT = '\u001b[?1049h';
 const LEAVE_ALT = '\u001b[?1049l';
 const HIDE_CURSOR = '\u001b[?25l';
 const SHOW_CURSOR = '\u001b[?25h';
-// 3J clears the scrollback as well as the visible screen. Without it, some
-// terminals leave the previous session's output sitting above ours, so the
-// takeover looks half-finished.
-const CLEAR = '\u001b[3J\u001b[2J\u001b[H';
+// The visible screen only. This used to send 3J as well, which erases the
+// terminal's scrollback — everything the user had done before running `sirus`
+// was gone when they came back to it. A program has no business deleting
+// history it did not write (D-059).
+const CLEAR = '\u001b[2J\u001b[H';
 
 // Mouse reporting: 1000 sends button events (the wheel is buttons 64/65),
 // 1006 asks for the SGR encoding, which is the only one that survives past
@@ -73,6 +74,19 @@ export function nativeSelectionKey(): string {
   if (program === 'Apple_Terminal') return 'fn';
   if (/iTerm/i.test(program)) return 'option';
   return 'shift';
+}
+
+/**
+ * Whether the shell should take over the screen. Off unless asked for.
+ *
+ * The full-screen shell lives in the alternate buffer: the terminal's own
+ * scrollback stops working, and everything in the session disappears when it
+ * exits. People expected a terminal tool to behave like one — scroll back to
+ * the wordmark with the trackpad, and still see what they did after leaving —
+ * so the inline shell is the default and full screen is the opt-in (D-059).
+ */
+export function fullScreenRequested(): boolean {
+  return process.env.SIRUS_FULLSCREEN === '1' && alternateScreenAvailable();
 }
 
 export function alternateScreenAvailable(): boolean {

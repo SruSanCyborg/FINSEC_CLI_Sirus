@@ -2019,3 +2019,42 @@ row to 61 columns at a 60-column terminal. The floor is now 10.
 Entries above this one were written before the rename. Their prose has been
 renamed with everything else; figures they quote were measured on the old seeds
 and are left as recorded.
+
+## D-059 — The inline shell is the default; full screen is opt-in
+
+Customers reported two things about `sirus` with no arguments, and both were
+true. You could not scroll the terminal back to the wordmark: the full-screen
+shell lived in the alternate buffer, where the terminal's own scrollback does
+not exist and only the shell's key bindings scroll — and plain arrows stop
+scrolling the moment a `/` opens the palette. And after leaving it everything was
+gone: the alternate buffer is discarded on exit, and entering it sent ESC[3J,
+which erases the scrollback the user already had. History from before `sirus`
+ran was deleted by a program that never wrote it.
+
+The inline shell already existed behind `SIRUS_NO_ALT_SCREEN=1`, and it is now
+the default. It prints into ordinary scrollback, so the trackpad reaches the
+wordmark and `/exit` leaves the session on screen. Each command gets the real
+terminal, so `/scan` streams natively and `/triage` and `/watch` draw their own
+UI. Full screen stays available with `SIRUS_FULLSCREEN=1`; it no longer sends
+3J, and on exit it writes its transcript back to the normal screen.
+
+Making inline the default exposed three defects it had always had, none of which
+the suite could see:
+
+- **Keystrokes went to the wrong process.** The prompt unmounted and the command
+  started while the shell's stdin was still flowing, so `/triage` never saw the
+  `a` it was sent — the shell read it and typed it into the next prompt as
+  `/a/watch`. The full-screen handover had fixed the same race; inline now does
+  the same: wait for the unmount, pause stdin before the child, resume after.
+- **Ctrl-C ended the shell.** Stopping `/watch` with Ctrl-C signalled the whole
+  foreground group, and Node's default handler killed the shell with it. While a
+  child holds the terminal the shell now ignores SIGINT. `shell:check`'s
+  "shell alive afterwards" had passed throughout, because its marker had already
+  been printed earlier in the session; it now looks for output only a command
+  run after the Ctrl-C can produce, and was seen to fail before the fix.
+- **`y` and Enter in one chunk did not apply a fix.** `ApplyPrompt` compared the
+  chunk whole, so `y\r` — fast typing, a paste, or the rehearsal — was not `y`.
+
+Inline also gained what only full screen had: `/cd`, the `/shell` reply, and
+remembering the last `/scan` target for `/triage` and `/fix`.
+

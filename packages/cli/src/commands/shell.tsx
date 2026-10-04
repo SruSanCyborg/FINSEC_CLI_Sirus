@@ -3,15 +3,16 @@
  *
  * Two renderers, chosen at startup:
  *
- * **Full screen** (default) takes over the terminal's drawing surface like
- * `vim`, pins the input box to the bottom, and scrolls the transcript in-app.
- * Command output is *captured* and rendered into that transcript, because in
- * the alternate buffer a child process cannot be handed the terminal without
- * fighting our own drawing.
+ * **Inline** (default) prints into the terminal's own scrollback and hands the
+ * real terminal to each command, so `/scan` gets its genuine streaming view and
+ * `/triage` its genuine keyboard UI. The trackpad scrolls back to the wordmark,
+ * and the whole session is still there after `/exit` (D-059).
  *
- * **Inline** (`SIRUS_NO_ALT_SCREEN=1`) keeps the native scrollback and hands
- * the real terminal to each command, so `/scan` gets its genuine streaming view
- * and `/triage` its genuine keyboard UI. Slower to look at, higher fidelity.
+ * **Full screen** (`SIRUS_FULLSCREEN=1`) takes over the terminal's drawing
+ * surface like `vim`, pins the input box to the bottom, and scrolls the
+ * transcript in-app. Command output is *captured* and rendered into that
+ * transcript, because in the alternate buffer a child process cannot be handed
+ * the terminal without fighting our own drawing.
  *
  * The captured path is not a downgrade for scanning: children run with
  * `SIRUS_STREAM_PLAIN=1`, so findings are emitted line by line as they are
@@ -32,7 +33,7 @@ import { CommandPalette, SHELL_COMMANDS, filterCommands } from '../ui/CommandPal
 import { FullScreenShell } from '../ui/FullScreenShell.js';
 import { COLOR, detectCapabilities, glyphsFor } from '../ui/theme.js';
 import {
-  alternateScreenAvailable,
+  fullScreenRequested,
   enterAlternateScreen,
   leaveAlternateScreen,
   mouseReportingAvailable,
@@ -88,7 +89,7 @@ export async function runShell(_flags: unknown, globals: GlobalFlags): Promise<v
 
   const glyphs = glyphsFor(capabilities);
 
-  if (alternateScreenAvailable()) {
+  if (fullScreenRequested()) {
     await runFullScreen(capabilities, glyphs, globals);
   } else {
     await runInline(capabilities, glyphs, globals);
@@ -284,6 +285,10 @@ function helpLines(width = 80): string[] {
 
 async function runFullScreen(capabilities: Capabilities, glyphs: Glyphs, globals: GlobalFlags): Promise<void> {
   enterAlternateScreen();
+  // The session's transcript, so it can be written back to the normal screen
+  // on the way out. The alternate buffer is discarded when we leave it, and a
+  // session that vanishes on /exit is a session nobody can refer back to.
+  let session: { lines: TranscriptLine[] } | null = null;
 
   try {
     await new Promise<void>((resolvePromise) => {
@@ -351,6 +356,7 @@ async function runFullScreen(capabilities: Capabilities, glyphs: Glyphs, globals
 
       /** What survives an unmount: everything the user would be sorry to lose. */
       const kept: { lines: TranscriptLine[]; history: string[] } = { lines: initial, history: [] };
+      session = kept;
 
       function App() {
         const { exit } = useApp();
@@ -890,6 +896,10 @@ async function runFullScreen(capabilities: Capabilities, glyphs: Glyphs, globals
     });
   } finally {
     leaveAlternateScreen();
+    if (session) {
+      const shown = (session as { lines: TranscriptLine[] }).lines.filter((line) => !line.detail);
+      process.stdout.write(shown.map((line) => line.text).join('\n') + '\n');
+    }
   }
 }
 
@@ -899,6 +909,9 @@ async function runInline(capabilities: Capabilities, glyphs: Glyphs, globals: Gl
   printInlineBanner(capabilities, glyphs, globals);
 
   const history: string[] = [];
+  // What the last /scan looked at, so /triage and /fix act on that scan rather
+  // than looking for one in the current directory.
+  let lastTarget: string | null = null;
 
   for (;;) {
     const line = await promptForLine({ capabilities, glyphs, history });
@@ -919,13 +932,46 @@ async function runInline(capabilities: Capabilities, glyphs: Glyphs, globals: Gl
       continue;
     }
 
+    if (parsed.name === 'cd') {
+      // A one-shot `sirus cd` cannot move its parent shell, but this process is
+      // the shell: every command it runs afterwards starts here.
+      if (!parsed.args[0]) {
+        process.stdout.write(`\n  here: ${process.cwd()}\n  move with  /cd <path>  ·  /cd ~  goes home\n\n`);
+        continue;
+      }
+      const to = parsed.args[0] === '~' ? homedir() : parsed.args[0];
+      try {
+        process.chdir(to);
+        lastTarget = null;
+        process.stdout.write(`\n  now scanning ${process.cwd()}\n\n`);
+      } catch {
+        process.stdout.write(`\n  no such directory: ${to}\n\n`);
+      }
+      continue;
+    }
+
     if (parsed.name === 'help' || !parsed.command) {
       if (!parsed.command) process.stdout.write(`\n  unknown command: /${parsed.name}\n`);
       process.stdout.write(helpLines().join('\n') + '\n');
       continue;
     }
 
-    await runChildInherited([parsed.name, ...parsed.args], globals);
+    if (parsed.name === 'shell') {
+      process.stdout.write('\n  you are already in it.\n\n');
+      continue;
+    }
+
+    let args = parsed.args;
+    if (parsed.name === 'scan') {
+      const path = args.find((a) => !a.startsWith('-'));
+      lastTarget = path ? resolvePath(process.cwd(), path) : process.cwd();
+    }
+    if (parsed.name === 'triage' || parsed.name === 'fix') args = withScanTarget(args, lastTarget);
+
+    const takesTerminal = NEEDS_REAL_TERMINAL.has(parsed.name) || parsed.name === 'triage';
+    if (takesTerminal) process.stdout.write(`\n  handed the terminal to /${parsed.name}\n`);
+    const code = await runChildInherited([parsed.name, ...args], globals, capabilities);
+    if (takesTerminal) process.stdout.write(`\n  /${parsed.name} finished (exit ${code}) — back in the shell.\n\n`);
   }
 
   process.stdout.write('\n');
@@ -947,19 +993,46 @@ function printInlineBanner(capabilities: Capabilities, glyphs: Glyphs, globals: 
   );
 }
 
-function runChildInherited(argv: string[], globals: GlobalFlags): Promise<void> {
-  return new Promise<void>((resolvePromise) => {
+function runChildInherited(argv: string[], globals: GlobalFlags, capabilities: Capabilities): Promise<number> {
+  // Let go of stdin before the child starts, and take it back after. The prompt
+  // was an Ink app reading stdin; unmounted, its stream is still flowing in this
+  // process, and a flowing parent stream reads keystrokes meant for a child that
+  // inherited the same descriptor. /triage never saw the `a` it was sent — the
+  // shell had it, and typed it into the next prompt as `/a/watch`. The
+  // full-screen handover fixed the same race the same way.
+  if (process.stdin.isTTY) process.stdin.setRawMode(false);
+  process.stdin.pause();
+
+  // Ctrl-C reaches every process in the foreground group, this one included.
+  // It was meant for the child — stopping /watch — and with Node's default
+  // handler it ended the whole shell too, session and all. A listener replaces
+  // the default, so while the child runs the keystroke is the child's alone.
+  const ignore = () => {};
+  process.on('SIGINT', ignore);
+
+  return new Promise<number>((resolvePromise) => {
     const child = spawn(process.execPath, [CLI_ENTRY, ...inheritedFlags(globals), ...argv], {
       stdio: 'inherit',
-      env: process.env,
+      env: {
+        ...process.env,
+        // So a child naming the next step says `/scan .`, the form that works
+        // in here, rather than `sirus scan .`.
+        SIRUS_IN_SHELL: '1',
+        ...(capabilities.unicode ? { SIRUS_UNICODE: '1' } : {}),
+      },
     });
+    const done = (code: number) => {
+      process.off('SIGINT', ignore);
+      process.stdin.resume();
+      resolvePromise(code);
+    };
     child.on('error', (error) => {
       process.stderr.write(`\n  could not run: ${error.message}\n`);
-      resolvePromise();
+      done(2);
     });
     // Exit codes are informational here: a scan that finds problems exits 1,
     // which is not a shell error and must not look like one.
-    child.on('close', () => resolvePromise());
+    child.on('close', (status) => done(status ?? 0));
   });
 }
 
@@ -979,7 +1052,12 @@ function promptForLine(args: {
       process.stdin.off('end', onEnd);
       process.stdin.off('close', onEnd);
       instance.unmount();
-      resolvePromise(value);
+      // Resolve once Ink has actually let go — its teardown is asynchronous,
+      // and a command started before it finishes competes with it for stdin.
+      instance.waitUntilExit().then(
+        () => resolvePromise(value),
+        () => resolvePromise(value),
+      );
     };
 
     // Without this the shell spins forever once stdin closes — which is what a
