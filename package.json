@@ -30,9 +30,9 @@
     "demo:record:terminal": "pnpm build && bash scripts/demo-stage.sh && node scripts/record-terminal.mjs"
   },
   "devDependencies": {
-    "@redocly/cli": "^2.46.1",
+    "@redocly/cli": "^2.57.0",
     "@stoplight/prism-cli": "^5.16.0",
     "openapi-typescript": "^7.13.0",
-    "ws": "^8.21.3"
+    "ws": "^8.22.0"
   }
 }
