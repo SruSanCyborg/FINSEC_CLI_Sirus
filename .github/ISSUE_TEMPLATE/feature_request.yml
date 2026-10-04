@@ -1,0 +1,22 @@
+name: Feature or rule request
+description: Suggest a new capability, command or scanning rule
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like
+      description: For a new rule, include a vulnerable example, a correct counterpart, and the compliance clause it maps to.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered

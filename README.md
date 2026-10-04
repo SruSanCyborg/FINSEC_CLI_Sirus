@@ -438,7 +438,10 @@ session, as Markdown) describe and keep the session itself.
 | [`docs/cli-surface.md`](docs/cli-surface.md) | The full CLI specification |
 | [`docs/revenue.md`](docs/revenue.md) | The revenue model and its results |
 | [`docs/decisions.md`](docs/decisions.md) | Every design decision, with the reasoning |
-| [`AGENTS.md`](AGENTS.md) | Orientation for contributors |
+| [`CHANGELOG.md`](CHANGELOG.md) | What changed in each release |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to build, test and send a pull request |
+| [`SECURITY.md`](SECURITY.md) | How to report a vulnerability privately |
+| [`AGENTS.md`](AGENTS.md) | Full orientation for contributors |
 
 ## Development
 

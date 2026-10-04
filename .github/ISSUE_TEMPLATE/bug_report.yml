@@ -1,0 +1,50 @@
+name: Bug report
+description: Something in Sirus does not work the way it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **Security problems go through [private reporting](https://github.com/SruSanCyborg/FINSEC_CLI_Sirus/security/advisories/new), not here.**
+  - type: input
+    id: version
+    attributes:
+      label: Sirus version
+      description: Output of `sirus --version`
+      placeholder: "0.4.2"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: OS, terminal and Node version
+      description: e.g. macOS 15, Terminal.app, `node -v` = v22.11.0
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: What you ran
+      description: The command, or the slash commands you typed in the shell
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead
+      description: Paste the output. `sirus doctor` output helps too. Remove any real secrets first.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: A file or feed that reproduces it (optional)
+      description: The smallest input that shows the problem

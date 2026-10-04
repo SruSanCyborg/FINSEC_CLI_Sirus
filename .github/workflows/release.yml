@@ -30,6 +30,16 @@ jobs:
       - name: Check the tag matches the package version
         working-directory: packages/cli
         run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      - name: Skip a version npm already has
+        id: published
+        working-directory: packages/cli
+        run: |
+          v=$(node -p "require('./package.json').version")
+          if npm view "@srusan/sirus@$v" version >/dev/null 2>&1; then
+            echo "already=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::@srusan/sirus@$v is already on npm (published by hand), so there is nothing to publish."
+          fi
       - name: Publish
+        if: steps.published.outputs.already != 'true'
         working-directory: packages/cli
         run: npm publish --provenance --access public
