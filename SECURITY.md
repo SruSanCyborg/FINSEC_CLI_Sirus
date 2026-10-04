@@ -12,8 +12,8 @@ are welcome and taken seriously.
 
 ## Reporting a vulnerability
 
-**Please do not open a public issue.** Report privately through GitHub instead:
-**[Security → Report a vulnerability](https://github.com/SruSanCyborg/FINSEC_CLI_Sirus/security/advisories/new)**.
+**Please do not open a public issue.** Report it privately to **[sanjay@srusan.com](mailto:sanjay@srusan.com)**, or
+through GitHub's **[Security → Report a vulnerability](https://github.com/SruSanCyborg/FINSEC_CLI_Sirus/security/advisories/new)**.
 
 Please include:
 
