@@ -383,16 +383,18 @@ that wraps into the row beneath and stops being a table, while every character
 is still present, so nothing fails. `render-width.test.ts` checks 60/80/100/120
 and colour. See D-032.
 
-**`sirus` opens the inline shell; full screen is opt-in (D-059).** Customers
-could not scroll the terminal back to the wordmark, and lost the whole session —
-and their history from *before* `sirus` — on leaving, because the full-screen
-shell lived in the alternate buffer and entered it with ESC[3J, which erases
-scrollback. The inline shell prints into ordinary scrollback, hands each command
-the real terminal, and leaves everything where it was. `SIRUS_FULLSCREEN=1`
-brings back the pinned-input viewer, which now never erases scrollback and
-writes its transcript back to the normal screen on exit. `pnpm shell:check` and
-`pnpm rehearse` drive whichever mode is the default; run them again with
-`SIRUS_FULLSCREEN=1` to cover the other. Both green at the time of writing.
+**`sirus` opens the full-screen shell, and it keeps your history (D-059, D-060).**
+Customers could not scroll back to the wordmark and lost the session — and their
+history from *before* `sirus` — on leaving. 0.4.1 answered by making the inline
+shell the default, which lost the pinned input box people had chosen the tool
+for. 0.4.2 restores full screen as the default and fixes the causes instead: the
+scrollback erase (`ESC[3J`, sent both by our own clear and by Ink before every
+window-tall frame) is filtered out while the shell holds the screen; the
+wordmark is pinned so the transcript cap never trims it; and on exit — `/exit`
+or a double Ctrl-C — the session is written back to the normal screen.
+`SIRUS_INLINE=1` (or `SIRUS_NO_ALT_SCREEN=1`) gives the plain scrollback prompt.
+`pnpm shell:check` and `pnpm rehearse` drive the default; run them again with
+`SIRUS_INLINE=1` to cover the other.
 
 **In full screen, `/triage` runs inline, in a panel above the prompt.** It asks a question with
 a few answers, and a question is not a reason to take the terminal: the

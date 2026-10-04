@@ -383,16 +383,16 @@ Suppressions require a reason and an expiry; an expired one brings the finding b
 |---|---|
 | `SIRUS_ASCII=1` | Pure ASCII output — `₹` becomes `Rs.`, box drawing becomes `+-\|` |
 | `NO_COLOR=1` | No colour |
-| `SIRUS_FULLSCREEN=1` | Open the shell full screen, with a pinned input and in-app scrolling (default is inline, in your normal scrollback) |
+| `SIRUS_INLINE=1` | Open the shell inline, in your normal scrollback, instead of full screen |
 | `SIRUS_SCAN_PACE` · `SIRUS_REVENUE_PACE` | Output pacing in ms; `0` disables (off automatically for `--json`, pipes and CI) |
 
 </details>
 
 ## Commands
 
-Everything runs from one place: type `sirus` to open the interactive shell, then use any command below as
-`/command` — guard, scan, revenue and reconcile in the same session, with your terminal's normal scrollback. Each
-command also works directly as `sirus <command>`.
+Everything runs from one place: type `sirus` to open the full-screen shell, then use any command below as
+`/command` — guard, scan, revenue and reconcile in the same session. When you leave, the session stays in your
+terminal. Each command also works directly as `sirus <command>`.
 
 | Command | What it does |
 |---|---|

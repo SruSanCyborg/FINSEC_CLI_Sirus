@@ -2058,3 +2058,22 @@ the suite could see:
 Inline also gained what only full screen had: `/cd`, the `/shell` reply, and
 remembering the last `/scan` target for `/triage` and `/fix`.
 
+## D-060 — Full screen is the default again, without the costs
+
+D-059 made the inline shell the default in 0.4.1. It fixed the two complaints and
+lost the thing people had chosen the tool for: a shell that takes over the
+terminal, with a pinned input box. The complaints were about what full screen
+*cost*, not about full screen, so 0.4.2 restores it and removes the costs:
+
+- **Scrollback erase.** Our own clear no longer sends `ESC[3J` (D-059), but Ink
+  sends it too — `ansi-escapes`' `clearTerminal` before every frame as tall as
+  the window, which the full-screen shell always is. While the shell holds the
+  screen, `ESC[3J` is stripped from everything written to stdout.
+- **The wordmark.** The transcript cap dropped the oldest lines first, and the
+  oldest lines are the wordmark; after one large scan it could not be scrolled
+  to. The wordmark lines are pinned and the cap applies after them.
+- **The session on exit.** Written back to the normal screen on `/exit` and on a
+  double Ctrl-C, so leaving does not lose what was done.
+
+`SIRUS_INLINE=1` keeps the inline shell, with every fix D-059 made to it.
+

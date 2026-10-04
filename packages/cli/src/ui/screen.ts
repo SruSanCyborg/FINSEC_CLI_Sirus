@@ -23,6 +23,7 @@ const SHOW_CURSOR = '\u001b[?25h';
 // was gone when they came back to it. A program has no business deleting
 // history it did not write (D-059).
 const CLEAR = '\u001b[2J\u001b[H';
+const ERASE_SCROLLBACK = '\u001b[3J';
 
 // Mouse reporting: 1000 sends button events (the wheel is buttons 64/65),
 // 1006 asks for the SGR encoding, which is the only one that survives past
@@ -44,6 +45,35 @@ const DISABLE_ALT_SCROLL = '\u001b[?1007l';
 
 let active = false;
 let mouseEnabled = false;
+let restoreWrite: (() => void) | null = null;
+
+/**
+ * Strips ESC[3J from everything written while the screen is ours.
+ *
+ * Ink clears the terminal before any frame as tall as the window, and its clear
+ * is `ESC[2J ESC[3J ESC[H` — 3J being "erase the scrollback". The full-screen
+ * shell is exactly that tall, so every such repaint could delete the history
+ * the user had before `sirus` started. Ink cannot be told not to; the bytes can
+ * be filtered on the way out (D-060).
+ */
+function guardScrollback(): void {
+  if (restoreWrite) return;
+  const original = process.stdout.write.bind(process.stdout);
+  const filtered = ((chunk: unknown, ...rest: unknown[]) => {
+    const cleaned =
+      typeof chunk === 'string'
+        ? chunk.split(ERASE_SCROLLBACK).join('')
+        : chunk instanceof Uint8Array && Buffer.from(chunk).includes(ERASE_SCROLLBACK)
+          ? Buffer.from(Buffer.from(chunk).toString('utf8').split(ERASE_SCROLLBACK).join(''), 'utf8')
+          : chunk;
+    return (original as (...args: unknown[]) => boolean)(cleaned, ...rest);
+  }) as typeof process.stdout.write;
+  process.stdout.write = filtered;
+  restoreWrite = () => {
+    if (process.stdout.write === filtered) process.stdout.write = original;
+    restoreWrite = null;
+  };
+}
 let altScrollEnabled = false;
 let teardownRegistered = false;
 
@@ -77,16 +107,17 @@ export function nativeSelectionKey(): string {
 }
 
 /**
- * Whether the shell should take over the screen. Off unless asked for.
+ * Whether the shell should take over the screen. On by default — the pinned
+ * input box and in-app scrolling are the shell people chose — and off with
+ * SIRUS_NO_ALT_SCREEN=1 or SIRUS_INLINE=1 for a plain scrollback prompt.
  *
- * The full-screen shell lives in the alternate buffer: the terminal's own
- * scrollback stops working, and everything in the session disappears when it
- * exits. People expected a terminal tool to behave like one — scroll back to
- * the wordmark with the trackpad, and still see what they did after leaving —
- * so the inline shell is the default and full screen is the opt-in (D-059).
+ * What customers objected to was never the takeover itself but what it cost
+ * them: the scrollback erased on the way in, and the session gone on the way
+ * out. Both are fixed where they happen (D-060), not by giving up the screen.
  */
 export function fullScreenRequested(): boolean {
-  return process.env.SIRUS_FULLSCREEN === '1' && alternateScreenAvailable();
+  if (process.env.SIRUS_INLINE === '1') return false;
+  return alternateScreenAvailable();
 }
 
 export function alternateScreenAvailable(): boolean {
@@ -118,6 +149,7 @@ export function leaveAlternateScreen(): void {
     LEAVE_ALT;
   mouseEnabled = false;
   altScrollEnabled = false;
+  restoreWrite?.();
   try {
     writeSync(1, restore);
   } catch {
@@ -128,6 +160,7 @@ export function leaveAlternateScreen(): void {
 export function enterAlternateScreen(): void {
   if (active) return;
   active = true;
+  guardScrollback();
   process.stdout.write(ENTER_ALT);
   process.stdout.write(CLEAR);
   process.stdout.write(ENABLE_ALT_SCROLL);

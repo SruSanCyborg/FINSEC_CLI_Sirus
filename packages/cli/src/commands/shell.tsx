@@ -3,16 +3,17 @@
  *
  * Two renderers, chosen at startup:
  *
- * **Inline** (default) prints into the terminal's own scrollback and hands the
- * real terminal to each command, so `/scan` gets its genuine streaming view and
- * `/triage` its genuine keyboard UI. The trackpad scrolls back to the wordmark,
- * and the whole session is still there after `/exit` (D-059).
+ * **Full screen** (default) takes over the terminal's drawing surface like
+ * `vim`, pins the input box to the bottom, and scrolls the transcript in-app.
+ * Command output is *captured* and rendered into that transcript, because in
+ * the alternate buffer a child process cannot be handed the terminal without
+ * fighting our own drawing. It never erases the scrollback it found, keeps the
+ * wordmark however long the session runs, and writes the session back to the
+ * normal screen on exit (D-060).
  *
- * **Full screen** (`SIRUS_FULLSCREEN=1`) takes over the terminal's drawing
- * surface like `vim`, pins the input box to the bottom, and scrolls the
- * transcript in-app. Command output is *captured* and rendered into that
- * transcript, because in the alternate buffer a child process cannot be handed
- * the terminal without fighting our own drawing.
+ * **Inline** (`SIRUS_INLINE=1`) prints into the terminal's own scrollback and
+ * hands the real terminal to each command, so `/scan` gets its genuine
+ * streaming view and `/triage` its genuine keyboard UI.
  *
  * The captured path is not a downgrade for scanning: children run with
  * `SIRUS_STREAM_PLAIN=1`, so findings are emitted line by line as they are
@@ -30,7 +31,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { CliError } from '../api/errors.js';
 import { CommandPalette, SHELL_COMMANDS, filterCommands } from '../ui/CommandPalette.js';
-import { FullScreenShell } from '../ui/FullScreenShell.js';
+import { FullScreenShell, capTranscript } from '../ui/FullScreenShell.js';
 import { COLOR, detectCapabilities, glyphsFor } from '../ui/theme.js';
 import {
   fullScreenRequested,
@@ -317,6 +318,7 @@ async function runFullScreen(capabilities: Capabilities, glyphs: Glyphs, globals
         id: nextId++,
         text,
         kind: 'output' as const,
+        pinned: true,
       }));
       // Wrapped here rather than at render. A transcript row is one screen line
       // and truncates, so a hint longer than the terminal lost its ending — and
@@ -409,7 +411,7 @@ async function runFullScreen(capabilities: Capabilities, glyphs: Glyphs, globals
             const next = [...all, ...batch];
             // Keep memory flat in a long session: the viewport shows a screenful
             // and nobody scrolls back thousands of lines in a terminal.
-            return next.length > MAX_TRANSCRIPT ? next.slice(next.length - MAX_TRANSCRIPT) : next;
+            return capTranscript(next, MAX_TRANSCRIPT);
           });
         };
 

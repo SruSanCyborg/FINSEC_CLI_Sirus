@@ -38,6 +38,24 @@ export interface TranscriptLine {
   kind: 'input' | 'output' | 'error' | 'note';
   /** Evidence, hidden until Ctrl+O. */
   detail?: boolean;
+  /** The wordmark at the top of the session: never trimmed away (D-060). */
+  pinned?: boolean;
+}
+
+/**
+ * Caps a transcript at `max` lines without losing the wordmark.
+ *
+ * The cap dropped the oldest lines first, and the oldest lines are the
+ * wordmark — so after one large scan the logo was gone from the session and no
+ * amount of scrolling could reach it. Pinned lines at the head are kept; the
+ * cap applies to everything after them.
+ */
+export function capTranscript(lines: TranscriptLine[], max: number): TranscriptLine[] {
+  if (lines.length <= max) return lines;
+  let head = 0;
+  while (head < lines.length && lines[head]?.pinned) head += 1;
+  const room = Math.max(0, max - head);
+  return [...lines.slice(0, head), ...lines.slice(lines.length - room)];
 }
 
 export interface FullScreenShellProps {
