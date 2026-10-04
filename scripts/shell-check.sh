@@ -85,6 +85,11 @@ echo
   # these would fail too — which is why they run at the end.
   # `/triage` is inline now: a panel above the prompt, answered with one key.
   # No handover, so no unmount and nothing to come back from.
+  # The session commands, and the tour.
+  printf '/status\r'; sleep 2
+  printf '/pwd\r'; sleep 1
+  printf '/export\r'; sleep 2
+  printf '/demo report --fast\r'; sleep 10
   printf '/triage\r'; sleep 5
   printf 'a';          sleep 3
   printf 'q';          sleep 3
@@ -148,6 +153,10 @@ check "/guard agents"            "anything else is escalated"
 check "/guard eval"              "proceeded with nobody asked"
 check "/guard score"             "ordinary actions were intervened on"
 check "/reconcile"               "EXCEPTIONS"
+check "/status"                  "sirus v[0-9.]+ · (full screen|inline) shell"
+check "/export"                  "saved this session to|needs the full-screen shell"
+check "/demo report"             "Proof nobody changed it afterwards"
+check "/demo verifies"           "OK[[:space:]]+report.json"
 check "/triage asks inline"      "a accept   d dismiss   s suppress"
 check "/triage records"          "accepted[[:space:]]+SIR-SEC"
 check "/watch handover"          "handed the terminal to /watch"

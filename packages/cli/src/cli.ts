@@ -18,7 +18,7 @@ import type { ExitCodeValue } from './domain.js';
 // profile behind it, so this is the only chance GROQ_API_KEY has of reaching it.
 loadEnvFile();
 
-const VERSION = '0.4.1';
+const VERSION = '0.4.2';
 
 function severityArg(value: string): string {
   if (!SEVERITIES.includes(value as never)) {
@@ -269,6 +269,17 @@ export function buildProgram(): Command {
     .action(async (options: Record<string, unknown>, command: Command) => {
       const { runBrief } = await import('./commands/brief.js');
       await runBrief(options, command.parent?.opts() ?? {});
+    });
+
+  program
+    .command('demo')
+    .description('Tour everything Sirus does, live, in one command — guard, scan, revenue, reconcile, report')
+    .argument('[beat]', 'run one part: guard | scan | revenue | reconcile | report')
+    .option('--dir <path>', 'where to put what it makes (default: a new temporary directory)')
+    .option('--fast', 'no pacing — print everything at once')
+    .action(async (beat: string | undefined, options: Record<string, unknown>) => {
+      const { runDemo } = await import('./commands/demo.js');
+      await runDemo(beat, { dir: options.dir as string | undefined, fast: Boolean(options.fast) });
     });
 
   program

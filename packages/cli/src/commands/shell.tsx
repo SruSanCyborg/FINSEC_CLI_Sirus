@@ -42,6 +42,9 @@ import {
   withAlternateScreenSuspended,
 } from '../ui/screen.js';
 import { renderWordmark } from '../ui/wordmark.js';
+import { appendHistory, loadHistory } from '../shell-history.js';
+import { exportSession, lastOutput, statusLines } from '../shell-session.js';
+import { copyToClipboard } from '../ui/clipboard.js';
 import { note, plural, truncate } from '../ui/kit.js';
 import { AUTHOR, TAGLINE, VERSION } from '../branding.js';
 import { findProjectRoot, loadConfig } from '../config/load.js';
@@ -185,6 +188,11 @@ export function parseLine(line: string): ParsedCommand | null {
  */
 const HELP_GROUPS: { title: string; flow: string; commands: string[] }[] = [
   {
+    title: 'NEW HERE — see everything it does, live',
+    flow: '/demo   →   /demo <beat> for one part again',
+    commands: ['demo'],
+  },
+  {
     title: 'START HERE — is anything wrong with this code?',
     flow: '/scan .   →   /explain <rule>   →   /fix <rule>',
     commands: ['scan', 'explain', 'fix', 'triage', 'watch'],
@@ -203,6 +211,11 @@ const HELP_GROUPS: { title: string; flow: string; commands: string[] }[] = [
     title: 'SET UP AND CHECK — run these when something looks wrong',
     flow: '/doctor   tells you which mode a scan will actually run in',
     commands: ['doctor', 'init', 'login', 'logout', 'cd'],
+  },
+  {
+    title: 'THIS SESSION — where you are, and keeping what you did',
+    flow: '/status   →   /copy the last output   →   /export the whole session',
+    commands: ['status', 'pwd', 'copy', 'export'],
   },
 ];
 
@@ -357,7 +370,7 @@ async function runFullScreen(capabilities: Capabilities, glyphs: Glyphs, globals
       }
 
       /** What survives an unmount: everything the user would be sorry to lose. */
-      const kept: { lines: TranscriptLine[]; history: string[] } = { lines: initial, history: [] };
+      const kept: { lines: TranscriptLine[]; history: string[] } = { lines: initial, history: loadHistory() };
       session = kept;
 
       function App() {
@@ -612,6 +625,7 @@ async function runFullScreen(capabilities: Capabilities, glyphs: Glyphs, globals
 
           append(line, 'input');
           setHistory((h) => [...h, line]);
+          appendHistory(line);
 
           const parsed = parseLine(line);
           if (!parsed) return;
@@ -643,6 +657,38 @@ async function runFullScreen(capabilities: Capabilities, glyphs: Glyphs, globals
               append(`now scanning ${process.cwd()}`, 'note');
             } catch {
               append(`no such directory: ${to}`, 'error');
+            }
+            return;
+          }
+
+          if (parsed.name === 'pwd') {
+            append(process.cwd(), 'note');
+            return;
+          }
+
+          if (parsed.name === 'status') {
+            const facts = { version: VERSION, mode: 'full screen' as const, lastScan: lastTargetRef.current, context };
+            for (const l of statusLines(facts)) append(l, 'note');
+            return;
+          }
+
+          if (parsed.name === 'copy') {
+            const text = lastOutput(lines);
+            if (!text) {
+              append('nothing to copy yet — run a command first', 'note');
+              return;
+            }
+            void copyToClipboard(text).then((ok) =>
+              append(ok ? `copied ${text.split('\n').length} lines of the last output` : 'no clipboard tool on this system', 'note'),
+            );
+            return;
+          }
+
+          if (parsed.name === 'export') {
+            try {
+              append(`saved this session to ${exportSession(lines, parsed.args[0])}`, 'note');
+            } catch (error) {
+              append(`could not save: ${error instanceof Error ? error.message : String(error)}`, 'error');
             }
             return;
           }
@@ -910,7 +956,7 @@ async function runFullScreen(capabilities: Capabilities, glyphs: Glyphs, globals
 async function runInline(capabilities: Capabilities, glyphs: Glyphs, globals: GlobalFlags): Promise<void> {
   printInlineBanner(capabilities, glyphs, globals);
 
-  const history: string[] = [];
+  const history: string[] = loadHistory();
   // What the last /scan looked at, so /triage and /fix act on that scan rather
   // than looking for one in the current directory.
   let lastTarget: string | null = null;
@@ -922,6 +968,7 @@ async function runInline(capabilities: Capabilities, glyphs: Glyphs, globals: Gl
     const trimmed = line.trim();
     if (!trimmed) continue;
     history.push(trimmed);
+    appendHistory(trimmed);
 
     const parsed = parseLine(trimmed);
     if (!parsed) continue;
@@ -949,6 +996,26 @@ async function runInline(capabilities: Capabilities, glyphs: Glyphs, globals: Gl
       } catch {
         process.stdout.write(`\n  no such directory: ${to}\n\n`);
       }
+      continue;
+    }
+
+    if (parsed.name === 'pwd') {
+      process.stdout.write(`\n  ${process.cwd()}\n\n`);
+      continue;
+    }
+
+    if (parsed.name === 'status') {
+      const facts = { version: VERSION, mode: 'inline' as const, lastScan: lastTarget, context: sessionContext(glyphs, globals) };
+      process.stdout.write(`\n${statusLines(facts).map((l) => `  ${l}`).join('\n')}\n\n`);
+      continue;
+    }
+
+    if (parsed.name === 'copy' || parsed.name === 'export') {
+      // Inline output goes straight to the terminal, so there is no transcript
+      // here to copy or save — the terminal's own scrollback has it.
+      process.stdout.write(
+        `\n  /${parsed.name} needs the full-screen shell, which keeps the transcript — unset SIRUS_INLINE.\n  Here, the terminal's own scrollback has everything.\n\n`,
+      );
       continue;
     }
 

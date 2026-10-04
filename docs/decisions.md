@@ -2077,3 +2077,27 @@ terminal, with a pinned input box. The complaints were about what full screen
 
 `SIRUS_INLINE=1` keeps the inline shell, with every fix D-059 made to it.
 
+## D-061 — What the shell learned from the open-source agent CLIs
+
+Researched from three openly licensed terminal agents — Gemini CLI (Apache-2.0),
+OpenAI Codex CLI (Apache-2.0) and opencode (MIT) — for behaviour, not code:
+everything here is Sirus's own implementation.
+
+- **Line editing** (`ui/line-editor.ts`). The prompt could only append and
+  delete at the end. Now the readline set: arrows, Ctrl-A/E, Option/Alt by word,
+  Ctrl-U/K/W. Ctrl-E and Ctrl-U keep their old jobs (evidence, scroll) on an
+  empty line, where there is nothing to edit.
+- **Leaving is never a surprise.** The first Ctrl-C on an empty line says
+  "Press Ctrl+C again to exit."; it already took two.
+- **History between sessions** (`shell-history.ts`), 0600 beside the
+  credentials, capped at 500, and **Ctrl-R** reverse search over it.
+- **Session commands** — `/status`, `/pwd`, `/copy`, `/export` — shell-only, each
+  with its reason in `parity.test.ts`.
+- **`sirus demo`.** Customers asked for the tour in the CLI. It runs the real
+  commands in a scratch directory; the planted fixture ships in the package by a
+  build-time copy, so `chaos-repo` stays the single source.
+
+Not taken: Codex's sandbox (Sirus runs nothing untrusted), its approval modes
+(guard's verdicts already are the graduated answer), and opencode's remappable
+leader keys (an editor's answer to an editor's problem).
+

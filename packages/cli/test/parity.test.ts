@@ -43,6 +43,10 @@ const SHELL_ONLY: Record<string, string> = {
   exit: 'leaves the shell; outside one there is nothing to leave',
   // `sirus --help` and `sirus help <cmd>` are commander's, and better.
   help: 'commander already provides --help and help <command> outside the shell',
+  status: "describes this shell session — its directory, last scan and mode; a one-shot process has no session",
+  pwd: "prints the shell's working directory; outside it, the parent shell's own pwd already does",
+  copy: "copies the last command's output from the transcript; there is no transcript outside the shell",
+  export: 'saves the shell transcript as Markdown; there is no transcript outside the shell',
 };
 
 describe('the two ways to run a command', () => {

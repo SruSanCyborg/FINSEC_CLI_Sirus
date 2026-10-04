@@ -1,6 +1,6 @@
 {
   "name": "@srusan/sirus",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Sirus by SruSan: a security and control layer for AI agents that move money, and a compliance linter for money-handling code. Runs locally, no account.",
   "keywords": [
     "security",
@@ -42,11 +42,11 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/bundle-demo.mjs",
     "dev": "tsx src/cli.ts",
     "test": "vitest run --testTimeout=30000",
     "test:watch": "vitest",
-    "prepublishOnly": "tsc -p tsconfig.json"
+    "prepublishOnly": "tsc -p tsconfig.json && node scripts/bundle-demo.mjs"
   },
   "dependencies": {
     "cli-highlight": "^2.1.11",

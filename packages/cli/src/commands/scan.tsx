@@ -34,7 +34,7 @@ import { detectCapabilities, glyphsFor } from '../ui/theme.js';
 import type { ScanOutcome } from '../ui/ScanView.js';
 import type { FailOn, Severity, WsFrame } from '../domain.js';
 
-const VERSION = '0.4.1';
+const VERSION = '0.4.2';
 
 interface ScanFlags {
   local?: boolean;

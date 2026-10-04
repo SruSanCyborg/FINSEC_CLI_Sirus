@@ -15,6 +15,8 @@
 import { Box, Text, useApp, useInput, useStdout } from 'ink';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { editLine } from './line-editor.js';
+
 import { ArgPalette, CommandPalette, argCompletions, filterCommands } from './CommandPalette.js';
 import { COLOR } from './theme.js';
 import { copyToClipboard } from './clipboard.js';
@@ -126,7 +128,20 @@ export function FullScreenShell({
   useApp();
   const { stdout } = useStdout();
 
-  const [value, setValue] = useState('');
+  const [value, setRawValue] = useState('');
+  const [cursor, setCursor] = useState(0);
+  // Every whole-line replacement (history, completion, clearing) puts the cursor
+  // at the end, where it would be had the line been typed.
+  const setValue = useCallback((next: string) => {
+    setRawValue(next);
+    setCursor(next.length);
+  }, []);
+  // Reverse search through history (Ctrl-R): what has been typed, and how many
+  // matches back from the newest it is showing.
+  const [search, setSearch] = useState<{ query: string; skip: number } | null>(null);
+  // Shown after a first Ctrl-C on an empty line, until a second one leaves or
+  // the moment passes — so leaving is never a surprise.
+  const [exitArmed, setExitArmed] = useState(false);
   const [selected, setSelected] = useState(0);
   const [historyIndex, setHistoryIndex] = useState<number | null>(null);
   // null means "follow the tail"; a number pins the viewport to that offset.
@@ -312,9 +327,51 @@ export function FullScreenShell({
       return;
     }
 
+    // Reverse search owns the keyboard while it is open, apart from scrolling.
+    if (search && !busy) {
+      const matches = searchHistory(history, search.query);
+      const shownMatch = matches[Math.min(search.skip, Math.max(0, matches.length - 1))];
+      if (key.ctrl && input === 'r') {
+        setSearch({ ...search, skip: Math.min(search.skip + 1, Math.max(0, matches.length - 1)) });
+        return;
+      }
+      if (key.escape || (key.ctrl && (input === 'g' || input === 'c'))) {
+        setSearch(null);
+        return;
+      }
+      if (key.return) {
+        setSearch(null);
+        if (shownMatch) {
+          setValue('');
+          setScrollOffset(null);
+          onSubmit(shownMatch);
+        }
+        return;
+      }
+      if (key.tab || key.rightArrow) {
+        setSearch(null);
+        if (shownMatch) setValue(shownMatch);
+        return;
+      }
+      if (key.backspace || key.delete) {
+        setSearch({ query: search.query.slice(0, -1), skip: 0 });
+        return;
+      }
+      if (input && !key.ctrl && !key.meta) {
+        setSearch({ query: search.query + input.replace(/[\r\n]/g, ''), skip: 0 });
+        return;
+      }
+      return;
+    }
+    if (key.ctrl && input === 'r' && !busy && !review) {
+      setSearch({ query: '', skip: 0 });
+      return;
+    }
+
     if (key.pageUp) return scrollBy(-halfPage);
     if (key.pageDown) return scrollBy(halfPage);
-    if (key.ctrl && input === 'e') {
+    if (key.ctrl && input === 'e' && value === '') {
+      // With text in the input, Ctrl-E is end-of-line, as everywhere else.
       // Toggling changes how many lines exist, so a naive toggle jumps the
       // viewport to the tail and hides the very evidence it just revealed.
       // Anchor on the line currently at the top and keep it there.
@@ -347,7 +404,9 @@ export function FullScreenShell({
       });
       return;
     }
-    if (key.ctrl && input === 'u') return scrollBy(-halfPage);
+    // Ctrl-U scrolls when there is nothing to delete; with text, it kills to
+    // the start of the line (handled by the line editor below).
+    if (key.ctrl && input === 'u' && cursor === 0) return scrollBy(-halfPage);
     if (key.ctrl && input === 'd' && value !== '') return scrollBy(halfPage);
     if (key.shift && key.upArrow) return scrollBy(-halfPage);
     if (key.shift && key.downArrow) return scrollBy(halfPage);
@@ -380,6 +439,8 @@ export function FullScreenShell({
       }
       lastCtrlC.current = now;
       setValue('');
+      setExitArmed(true);
+      setTimeout(() => setExitArmed(false), 2000);
       return;
     }
 
@@ -459,17 +520,11 @@ export function FullScreenShell({
       return;
     }
 
-    if (key.backspace || key.delete) {
-      setValue((v) => v.slice(0, -1));
-      setSelected(0);
-      return;
-    }
-
-    if (input && !key.ctrl && !key.meta) {
-      const printable = input.replace(/[\r\n]/g, '');
-      if (!printable) return;
-      setValue((v) => v + printable);
-      setSelected(0);
+    const edited = editLine({ value, cursor }, input, key);
+    if (edited) {
+      setRawValue(edited.value);
+      setCursor(edited.cursor);
+      if (edited.value !== value) setSelected(0);
     }
   });
 
@@ -574,15 +629,36 @@ export function FullScreenShell({
             ) : (
               <Text color={accent}>{`${glyphs.arrow} `}</Text>
             )}
-            <Text>{value}</Text>
-            <Text color={muted}>▌</Text>
+            {search ? (
+              <>
+                <Text color={muted}>{`search history: `}</Text>
+                <Text>{search.query}</Text>
+                <Text color={muted}>{'▌  '}</Text>
+                <Text>{searchHistory(history, search.query)[search.skip] ?? (search.query ? 'no match' : '')}</Text>
+              </>
+            ) : cursor < value.length ? (
+              <>
+                <Text>{value.slice(0, cursor)}</Text>
+                <Text inverse>{value[cursor]}</Text>
+                <Text>{value.slice(cursor + 1)}</Text>
+              </>
+            ) : (
+              <>
+                <Text>{value}</Text>
+                <Text color={muted}>▌</Text>
+              </>
+            )}
           </>
         )}
       </Box>
 
       <Box>
         <Text color={muted}>
-          {following
+          {search
+            ? ' ctrl-r older · enter run · tab edit · esc cancel'
+            : exitArmed
+              ? ' Press Ctrl+C again to exit.'
+              : following
             ? busy
               ? ' ctrl-c cancel · ↑↓ scroll'
               : copied
@@ -593,4 +669,17 @@ export function FullScreenShell({
       </Box>
     </Box>
   );
+}
+
+/** History entries containing `query`, newest first, without repeats. */
+export function searchHistory(history: string[], query: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (let i = history.length - 1; i >= 0; i -= 1) {
+    const entry = history[i] as string;
+    if (seen.has(entry) || !entry.includes(query)) continue;
+    seen.add(entry);
+    out.push(entry);
+  }
+  return out;
 }

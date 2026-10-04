@@ -48,6 +48,20 @@ export interface ShellCommand {
 
 export const SHELL_COMMANDS: ShellCommand[] = [
   {
+    name: 'demo',
+    summary: 'Tour everything Sirus does, live — guard, scan, revenue, reconcile, report',
+    usage: '/demo [beat]',
+    keywords: ['tour', 'showcase', 'try', 'example'],
+    args: [
+      { name: 'guard', summary: 'agents that move money, judged action by action', kind: 'subcommand' },
+      { name: 'scan', summary: 'a planted payments service, priced and mapped to clauses', kind: 'subcommand' },
+      { name: 'revenue', summary: 'failed payments ranked by what acting recovers', kind: 'subcommand' },
+      { name: 'reconcile', summary: 'three sets of books that disagree', kind: 'subcommand' },
+      { name: 'report', summary: 'a signed report, entered in the ledger and verified', kind: 'subcommand' },
+      { name: '--fast', summary: 'no pacing — print everything at once', kind: 'flag' },
+    ],
+  },
+  {
     name: 'guard',
     summary: 'Govern an agent that can move money — judge every action before it lands',
     usage: '/guard [gen|eval|explain|agents|score|trail] [feed]',
@@ -225,6 +239,10 @@ export const SHELL_COMMANDS: ShellCommand[] = [
   { name: 'logout', summary: 'Remove a stored profile' },
   { name: 'cd', summary: 'Show or change the directory everything runs in', usage: '/cd [path] — bare /cd says where you are', local: true },
   { name: 'help', summary: 'Show this list', local: true },
+  { name: 'status', summary: 'Where you are, what was scanned last, and how this session is set up', local: true },
+  { name: 'pwd', summary: 'Show the directory everything runs in', local: true },
+  { name: 'copy', summary: 'Copy the output of the last command to the clipboard', local: true },
+  { name: 'export', summary: 'Save this session as a Markdown file', usage: '/export [file]', local: true },
   // Listed even though it does nothing here, because the shell already answers
   // it — "you are already in it" — and a command that is handled but invisible
   // is one somebody types, gets a sensible reply from, and still cannot find.

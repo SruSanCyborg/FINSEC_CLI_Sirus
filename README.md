@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/@srusan/sirus"><img src="https://img.shields.io/npm/v/%40srusan%2Fsirus?color=cb3837&logo=npm&label=npm" alt="npm version"></a>
   <a href="https://github.com/SruSanCyborg/FINSEC_CLI_Sirus/actions/workflows/ci.yml"><img src="https://github.com/SruSanCyborg/FINSEC_CLI_Sirus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/tests-878%20passing-brightgreen" alt="878 tests passing">
+  <img src="https://img.shields.io/badge/tests-906%20passing-brightgreen" alt="906 tests passing">
   <img src="https://img.shields.io/badge/node-%E2%89%A522-339933?logo=node.js&logoColor=white" alt="Node 22+">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey" alt="macOS, Linux, Windows">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/SruSanCyborg/FINSEC_CLI_Sirus?color=blue" alt="MIT license"></a>
@@ -49,6 +49,7 @@ Requires [Node.js](https://nodejs.org) 22 or newer.
 ```bash
 npx @srusan/sirus                    # run without installing (opens the interactive shell)
 npm install -g @srusan/sirus         # or install the `sirus` command
+sirus demo                           # tour everything it does, live, in about a minute
 ```
 
 Generate a day of agent payments with attacks planted in it, and let Sirus judge them:
@@ -406,10 +407,27 @@ terminal. Each command also works directly as `sirus <command>`.
 | `baseline` · `suppress` | Record what is already accepted, and what is excused |
 | `report` · `ledger` · `badge` | Signed reports, their history, and a README badge |
 | `revenue` · `reconcile` | Money at risk in operations |
+| `demo [beat]` | Tour everything live — guard, scan, revenue, reconcile, report — or one part of it |
 | `brief` | The whole project in one document — a PDF, or `--plain` on screen |
 | `init` · `login` · `doctor` | Project setup, credentials, and a pre-flight check |
 
-Every command has `--help`.
+Every command has `--help`. Inside the shell, `/status`, `/pwd`, `/copy` (the last output) and `/export` (the whole
+session, as Markdown) describe and keep the session itself.
+
+<details>
+<summary>Keyboard shortcuts in the shell</summary>
+
+| Keys | Action |
+|---|---|
+| `←` `→` · `Ctrl-A` `Ctrl-E` · `Option/Alt-←` `→` | Move by character, to the start or end, or by word |
+| `Ctrl-U` · `Ctrl-K` · `Ctrl-W` | Delete to the start, to the end, or the previous word |
+| `Ctrl-P` `Ctrl-N` | Previous / next command — history is kept between sessions |
+| `Ctrl-R` | Search history; `Ctrl-R` again for older matches, `Enter` to run, `Tab` to edit |
+| `↑` `↓` · `Shift-↑` `↓` · wheel | Scroll the session |
+| `Ctrl-E` (empty line) | Show or hide the evidence behind each finding |
+| `Ctrl-C` | Cancel a running command; on an empty line, press twice to leave |
+
+</details>
 
 ## Documentation
 
@@ -427,7 +445,7 @@ Every command has `--help`.
 ```bash
 pnpm install
 pnpm build          # tsc → packages/cli/dist
-pnpm test           # vitest — 878 tests
+pnpm test           # vitest — 906 tests
 pnpm rehearse       # drive the real shell in a real terminal
 ```
 

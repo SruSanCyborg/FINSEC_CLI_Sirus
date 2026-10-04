@@ -1,6 +1,6 @@
 {
   "name": "srusan-sirus-workspace",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "private": true,
   "type": "module",
   "description": "A security & compliance linter for money-handling code",

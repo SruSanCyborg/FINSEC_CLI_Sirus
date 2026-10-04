@@ -210,6 +210,7 @@ node packages/cli/dist/cli.js scan contract/fixtures/chaos-repo \
 | Area | State |
 |---|---|
 | **`guard`** | Done — six stages, graduated verdicts, per-agent behavioural baselines, hash-chained signed decision trail. 95% autonomy on the fixture with every planted attack stopped and 0 of 252 ordinary actions interrupted |
+| **`demo`** | Done — the whole product live in one command (`sirus demo`, or `/demo <beat>`), in a scratch directory, against generated data and the bundled `chaos-repo` (copied into `dist/` at build, never a second checked-in copy) |
 | **`brief`** | Done — the whole argument as a six-page PDF written from a live run, or the same on screen with `--plain` |
 | Contract + mock backend | Done. `openapi.yaml` validates; `smoke.mjs` asserts the mockup totals |
 | Local engine | Real. tree-sitter AST, 13 rules, taint tracking (intra- and inter-procedural), fingerprints, money model. `rule-gallery` fires every one, in Python **and JavaScript** |
@@ -231,7 +232,7 @@ node packages/cli/dist/cli.js scan contract/fixtures/chaos-repo \
 | **`revenue sweep`** | Done — the same evaluation over N seeded batches, `--save`/`--against` for regressions |
 | **`revenue stress`** | Done — six distribution shifts applied to the generator; the money edge holds in 3 of 6, the compliance rule in 6 of 6 |
 | **`reconcile`** | Done — 5-tier matcher over 3 sets of books, match rate + verified accuracy + exceptions |
-| Tests | 878 passing |
+| Tests | 906 passing |
 
 **The API is required for nothing.** `rules test` and PDF reports were the last
 two holdouts and both reasons were wrong. `rules test` — it did not need an
