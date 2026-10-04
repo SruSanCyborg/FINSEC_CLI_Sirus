@@ -1,51 +1,63 @@
 <p align="center">
-  <img src="media/sirus-hero.svg" width="100%" alt="Sirus by SruSan: a security and control layer for AI agents that move money, and for the code they run on. Verdicts ALLOW, VERIFY, CONSTRAIN, BLOCK; install with npx @srusan/sirus">
+  <img src="media/sirus-hero.svg" width="100%" alt="Sirus by SruSan: a security and control layer for AI agents that move money, and for the code they run on">
 </p>
 
-<h1 align="center">Sirus, by SruSan</h1>
-
 <p align="center">
-  <a href="https://www.npmjs.com/package/@srusan/sirus"><img src="https://img.shields.io/npm/v/%40srusan%2Fsirus?color=cb3837&logo=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@srusan/sirus"><img src="https://img.shields.io/npm/v/%40srusan%2Fsirus?color=cb3837&logo=npm&label=npm" alt="npm version"></a>
   <a href="https://github.com/SruSanCyborg/FINSEC_CLI_Sirus/actions/workflows/ci.yml"><img src="https://github.com/SruSanCyborg/FINSEC_CLI_Sirus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/tests-871%20passing-brightgreen" alt="871 tests passing">
-  <img src="https://img.shields.io/badge/node-%E2%89%A522-339933?logo=node.js&logoColor=white" alt="Node >= 22">
-  <img src="https://img.shields.io/github/license/SruSanCyborg/FINSEC_CLI_Sirus?color=blue" alt="MIT license">
+  <img src="https://img.shields.io/badge/node-%E2%89%A522-339933?logo=node.js&logoColor=white" alt="Node 22+">
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey" alt="macOS, Linux, Windows">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/SruSanCyborg/FINSEC_CLI_Sirus?color=blue" alt="MIT license"></a>
 </p>
 
-<p align="center"><b>A security and control layer for AI agents that can move money, and for the code they run on.</b></p>
-
-An autonomous agent with access to a wallet is a new kind of actor: it holds
-credentials, decides for itself, and signs its own transactions. Every one of
-those transactions can be perfectly valid and still be the wrong thing to do.
-`sirus` decides, per action, whether it should happen, and keeps a signed
-record of every decision, including the ones it allowed.
-
-It runs entirely on your machine. No backend, no network, no account.
-
-```bash
-npx @srusan/sirus            # try it now, nothing to install (Node.js 22+)
-```
+<p align="center">
+  <b>Decide, per action, whether an AI agent should be allowed to move money —<br>and keep a signed record of every decision.</b>
+</p>
 
 <p align="center">
-  <a href="#install">Install</a> ·
-  <a href="#try-it">Try it</a> ·
-  <a href="#six-questions-asked-of-every-action">How it decides</a> ·
-  <a href="#scanning-code-quick-start">Scan code</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#how-guard-decides">How it decides</a> ·
+  <a href="#scan-the-code-it-runs-on">Code scanning</a> ·
+  <a href="#use-it-in-ci">CI</a> ·
   <a href="#commands">Commands</a> ·
-  <a href="#using-it-in-ci">CI</a> ·
-  <a href="#configuration">Configuration</a> ·
   <a href="#documentation">Docs</a>
 </p>
 
-## See it run
+---
+
+An autonomous agent with a wallet holds credentials, decides for itself and signs its own transactions. Every one of
+those transactions can be perfectly valid and still be the wrong thing to do. **Sirus** sits between the agent and the
+money: it judges each proposed action, lets routine work through untouched, and stops the ones that should not happen —
+without a human approving every payment.
+
+- **Graduated verdicts** — `ALLOW`, `VERIFY`, `CONSTRAIN` or `BLOCK`, never just yes or no.
+- **Six independent checks** — identity, intent, policy, context, behaviour and prompt injection.
+- **Tamper-evident decisions** — every verdict, including the allowed ones, is hash-chained and ed25519-signed.
+- **Secures the code underneath** — a tree-sitter scanner that maps each finding to PCI-DSS v4.0, RBI, DPDP and GDPR
+  clauses and prices the exposure in rupees.
+- **Fully local** — no backend, no network, no account. Runs on macOS, Linux and Windows.
 
 <p align="center">
-  <a href="media/sirus-demo.mp4"><img src="media/sirus-demo.gif" alt="sirus running live in a terminal: guard, scan and revenue" width="720"></a>
-  <br>
-  <sub>▶ click for the full five-minute demo, recorded live: <code>guard</code>, <code>scan</code> and <code>revenue</code>, no slides</sub>
+  <a href="media/sirus-demo.mp4"><img src="media/sirus-demo-thumb.jpg" width="720" alt="Watch the five-minute narrated demo: guard, scan, revenue and reconcile running live in a terminal"></a>
 </p>
 
-What `sirus guard` decides on a day of an agent's payments:
+## Quick start
+
+Requires [Node.js](https://nodejs.org) 22 or newer.
+
+```bash
+npx @srusan/sirus                    # run without installing (opens the interactive shell)
+npm install -g @srusan/sirus         # or install the `sirus` command
+```
+
+Generate a day of agent payments with attacks planted in it, and let Sirus judge them:
+
+```bash
+sirus guard gen feed                 # 278 actions, 26 attacks planted
+sirus guard eval feed --narrate      # judge every action, explained
+sirus guard score feed               # compare against what was actually planted
+```
 
 ```
   !  BLOCK     wlt-9f2c41    Rs.48,000   the instruction contains override of prior
@@ -58,18 +70,12 @@ What `sirus guard` decides on a day of an agent's payments:
   Autonomy    95.0% of actions proceeded with nobody asked
 ```
 
----
+Every prompt injection, drain attempt and out-of-scope action is blocked, a burst is cut off at the hourly limit, and
+**0 of 252 ordinary actions are interrupted**. Both halves matter: a layer that catches attacks but interrupts routine
+work gets switched off within a week.
 
-## Install
-
-Sirus is on npm as [`@srusan/sirus`](https://www.npmjs.com/package/@srusan/sirus). It works on **Windows, macOS and
-Linux** and needs **[Node.js](https://nodejs.org) 22 or newer** (check with `node -v`).
-
-```bash
-npx @srusan/sirus --help         # run it once, without installing
-npm install -g @srusan/sirus     # or install the `sirus` command
-sirus --version
-```
+<details>
+<summary>Other package managers, and troubleshooting</summary>
 
 | Package manager | Install | Run once |
 |---|---|---|
@@ -78,77 +84,19 @@ sirus --version
 | yarn | `yarn global add @srusan/sirus` | `yarn dlx @srusan/sirus` |
 | bun | `bun add -g @srusan/sirus` | `bunx @srusan/sirus` |
 
-Update with `npm update -g @srusan/sirus`, remove with `npm uninstall -g @srusan/sirus`.
-
-<details>
-<summary><b>Troubleshooting</b></summary>
-
-- **`Unsupported engine` or syntax errors on start:** your Node.js is older than 22. Install the current LTS from
-  [nodejs.org](https://nodejs.org), or with a version manager: `nvm install 22 && nvm use 22`.
-- **`sirus: command not found` after a global install:** npm's global bin folder is not on your `PATH`. Run
-  `npm config get prefix` and add its `bin` folder (on Windows, the prefix folder itself) to `PATH`, or just use `npx @srusan/sirus`.
-- **`EACCES` permission errors on macOS/Linux:** don't use `sudo`; install Node with [nvm](https://github.com/nvm-sh/nvm)
-  so global packages go into your home folder.
-- **Anything else:** `sirus doctor` checks your setup and tells you what to run next.
+- **`Unsupported engine` or syntax errors on start** — Node.js is older than 22. Install the current LTS, or
+  `nvm install 22 && nvm use 22`.
+- **`sirus: command not found`** — npm's global `bin` folder is not on your `PATH`. Check `npm config get prefix`, or
+  use `npx @srusan/sirus`.
+- **`EACCES` on macOS/Linux** — avoid `sudo`; install Node with [nvm](https://github.com/nvm-sh/nvm).
+- **Anything else** — `sirus doctor` checks your setup and tells you what to run next.
 
 </details>
 
----
+## How guard decides
 
-## Try it
-
-```bash
-sirus brief --plain                # what this is, in two minutes
-sirus guard gen feed               # 278 actions, 26 attacks planted
-sirus guard eval feed --narrate    # judge them, explained
-sirus guard score feed             # against what was actually planted
-sirus scan .                       # scan your own project
-```
-
-`sirus brief` writes the same thing as a six-page PDF. Every figure in it comes
-from that run — none of them are typed in.
-
-```
-  planted case            allow  verify  constrain  block
-  ----------------------------------------------------------
-  after_hours               0       1          0      0
-  drain_attempt             0       0          0      1
-  flagged_counterparty      0       0          0      1
-  new_vendor                0       1          0      0
-  none                    252       0          0      0
-  out_of_scope              0       0          0      2
-  over_cap                  0       0          1      0
-  prompt_injection          0       0          0      2
-  unaudited_protocol        0       0          0      1
-
-  0 of 252 ordinary actions were intervened on (0.0%).
-```
-
-**Both halves of that table matter.** Every planted attack is stopped; a
-genuinely new supplier and a late-night deadline are stepped up rather than
-refused; and nothing ordinary is touched. A layer that catches every attack and
-interrupts routine work is a layer that gets switched off in a week — an earlier
-version of this engine did exactly that, stepping up 194 of 252 ordinary
-payments, and it passed every test that only counted catches.
-
----
-
-## The problem
-
-Traditional financial security assumes a human or a trusted application starts a
-transaction. An autonomous agent breaks that assumption: it *is* the actor.
-
-A transaction can be correctly signed, properly authenticated, inside the
-agent's own credentials — and still be a transfer the agent has never made
-before, to a counterparty it has never used, because a web page it was reading
-told it to. **Technical validity is not behavioural legitimacy**, and the gap
-between them is where the money goes.
-
-The two obvious answers both fail. Require human approval for every action and
-the agent is not autonomous — the operator has become the agent. Grant it
-unrestricted authority and a single compromised instruction drains the account.
-
-So the answer has to be graduated.
+Requiring human approval for every action means the agent is not autonomous. Granting it unrestricted authority means
+one compromised instruction drains the account. So the answer is graduated:
 
 ```mermaid
 flowchart LR
@@ -157,56 +105,29 @@ flowchart LR
     G -->|"unusual but plausible"| VERIFY["VERIFY<br/>step-up, not a person"]
     G -->|"over a limit"| CONSTRAIN["CONSTRAIN<br/>proceeds, smaller"]
     G -->|"unsafe or manipulated"| BLOCK["BLOCK<br/>refused, operator told"]
-    ALLOW --> T["signed decision trail"]
-    VERIFY --> T
-    CONSTRAIN --> T
-    BLOCK --> T
-    T --> B["outcomes update<br/>the agent's baseline"]
-    B -.->|"the loop"| G
+    ALLOW & VERIFY & CONSTRAIN & BLOCK --> T["signed decision trail"]
 ```
 
----
+Each action passes six checks. Each one raises signals, and the verdict is the strongest — because the same fact means
+different things in combination. A large amount is routine; a first-time counterparty is routine; a large amount to a
+first-time counterparty, on an instruction fetched from a web page, is not.
 
-## Six questions, asked of every action
-
-Nothing decides alone. Each stage raises signals, and the verdict is the
-strongest one — because the same fact means different things in combination. A
-first-time counterparty is routine. A large amount is routine. A large amount to
-a first-time counterparty, on an instruction fetched from a web page, is not.
-
-```mermaid
-flowchart TD
-    ACT["proposed action<br/>agent · amount · counterparty · intent · instruction"]
-    ACT --> S1["identity<br/>is this agent allowed to do this at all?"]
-    ACT --> S2["intent<br/>does its stated purpose match its objective?"]
-    ACT --> S3["policy<br/>spending, exposure, frequency, counterparty"]
-    ACT --> S4["context<br/>counterparty reputation, protocol risk, flags"]
-    ACT --> S5["behaviour<br/>is this how this agent actually behaves?"]
-    ACT --> S6["manipulation<br/>is the instruction behind it trustworthy?"]
-    S1 --> V{"verdict<br/>strongest signal wins"}
-    S2 --> V
-    S3 --> V
-    S4 --> V
-    S5 --> V
-    S6 --> V
-    V --> OUT["ALLOW · VERIFY · CONSTRAIN · BLOCK"]
-```
-
-| Stage | Asks | Example refusal |
+| Check | Asks | Example refusal |
 |---|---|---|
-| **identity** | Is this inside the agent's grant? | `withdraw is outside this agent's grant` |
-| **intent** | Does the stated purpose match the objective? | `stated purpose does not match the agent's objective` |
-| **policy** | Any explicit limit breached? | `₹82,000 is over the per-action cap` |
-| **context** | How risky is this counterparty or protocol? | `yield-max is unaudited` |
-| **behaviour** | Is this how the agent actually behaves? | `₹49,500 is 2.1σ above this agent's usual` |
-| **manipulation** | Can the instruction be trusted? | `the instruction contains override of prior instructions` |
+| **Identity** | Is this inside the agent's grant? | `withdraw is outside this agent's grant` |
+| **Intent** | Does the stated purpose match its objective? | `stated purpose does not match the agent's objective` |
+| **Policy** | Is an explicit limit breached? | `₹82,000 is over the per-action cap` |
+| **Context** | How risky is the counterparty or protocol? | `yield-max is unaudited` |
+| **Behaviour** | Is this how the agent actually behaves? | `₹49,500 is 2.1σ above this agent's usual` |
+| **Manipulation** | Can the instruction behind it be trusted? | `the instruction contains override of prior instructions` |
 
-### Prompt injection is a financial control problem
+<details>
+<summary><b>Prompt injection is a financial control problem</b></summary>
 
-The requirement with no equivalent in conventional payment security: an agent
-reads things, and some of what it reads is written by whoever wants it to move
-money. The transaction is perfectly signed and the agent perfectly obedient —
-the compromise happened upstream of the signature.
+<br>
+
+An agent reads things, and some of what it reads is written by whoever wants it to move money. The transaction is
+perfectly signed and the agent perfectly obedient — the compromise happened upstream of the signature.
 
 ```
   act_00253  2026-08-12 10:41  Rs.48,000 -> wlt-9f2c41
@@ -229,36 +150,31 @@ the compromise happened upstream of the signature.
   decided by manipulation.injected_instruction
 ```
 
-Two independent checks, because either alone is easy to defeat: the **source**
-(content the agent fetched is not an instruction from its operator, however
-imperative it sounds) and the **shape** (override phrasing, urgency stacked with
-secrecy, redirection of funds).
+Two independent checks, because either alone is easy to defeat: the **source** (content the agent fetched is not an
+instruction from its operator) and the **shape** (override phrasing, urgency stacked with secrecy, redirection of funds).
 
-### The attacker who read the policy
+</details>
 
-A cap stops an action that exceeds it and says nothing about one that lands at
-99% of it — which is exactly where a competent attacker aims. At ₹49,500 against
-a ₹50,000 cap there is no limit breach and only 2σ on amount. Neither signal
-blocks alone; together with a counterparty the agent has never used, they do:
+<details>
+<summary><b>The attacker who read the policy</b></summary>
+
+<br>
+
+A cap stops an action that exceeds it and says nothing about one at 99% of it — exactly where a competent attacker
+aims. At ₹49,500 against a ₹50,000 cap there is no limit breach and only 2σ on amount. Neither signal blocks alone;
+together with a counterparty the agent has never used, they do:
 
 ```
   ! BLOCK  wlt-9f2c41  Rs.49,500  an amount sized just under the cap, to a
                                   counterparty never used before
-                                  the limit was not breached because it was
-                                  measured first
 ```
 
----
+</details>
 
-## The decisions are the product
+### Every decision is signed
 
-A control layer's decisions are worth nothing if they cannot be shown to be the
-decisions it actually made. The interesting case is not a refusal — it is an
-action that was **allowed** and turned out badly, which is exactly the entry
-someone has a reason to edit afterwards.
-
-So every decision, including the allowed ones, is hash-chained and the sealed
-trail is ed25519-signed.
+The case that matters is not a refusal — it is an action that was **allowed** and turned out badly, which is exactly
+the entry someone has a reason to edit afterwards. So every decision is hash-chained and the trail is ed25519-signed:
 
 ```bash
 sirus guard trail --verify decisions-mtcnin36.json
@@ -270,242 +186,52 @@ OK      decisions-mtcnin36.json
         signed 2026-08-28T07:49:52.870Z by key e960b577e03659b4
 ```
 
-Flip one `block` to `allow` and it says where:
+Flip one `block` to `allow` and verification fails at that entry. The `key_id` is derived from the embedded public key,
+never trusted as a label, so a rewritten trail cannot be re-signed under the legitimate fingerprint.
 
-```
-FAILED  tampered.json
-        entry 255 has been altered since it was written
-```
+## Scan the code it runs on
 
-`key_id` is **derived** from the embedded public key and checked, never read as
-a label — otherwise anyone could re-sign a rewritten trail, keep the legitimate
-fingerprint, and have the verifier vouch for them. Without `--key`, a passing
-verify says *unmodified*; it does not say *by whom*, and it prints that in as
-many words.
-
----
-
-## It also secures the code the agent runs on
-
-An agent is only as safe as the system it operates. The same tool scans that
-code before deployment, maps each finding to a compliance clause, and prices the
-exposure in rupees.
-
-```
-  ✗ CRITICAL  SIR-SEC-001  Hardcoded payment-provider secret key
-     src/config.py:14                          PCI-DSS 8.6.2 · DPDP §8
-     14 │  STRIPE_KEY = "sk_live_51H8xR2eZv…"
-        │               ╰── secret · ⚠ VERIFIED LIVE · ₹42,00,000 at risk
-     ↳ fix: env_lookup   run  sirus fix SIR-SEC-001
-```
-
-And a third surface, `revenue`, prices money at risk in *operations* — failed
-payments, abandoned checkouts, ageing receivables — under the same discipline:
-capacity-bounded, refusals logged, uplift net of what would have arrived anyway.
-
-| | Command | Answers |
-|---|---|---|
-| **Agents** | `sirus guard` | Should this agent be allowed to do this, right now? |
-| **Code** | `sirus scan .` | Which lines break which clause, and what is the exposure worth |
-| **Operations** | `sirus revenue` · `sirus reconcile` | Which money is recoverable, and what it costs to chase |
-| **Proof** | `sirus report` · `sirus ledger` | That none of it was altered afterwards |
-
----
-
-## Scanning code: quick start
-
-With `sirus` installed ([Install](#install)), scan any project:
+An agent is only as safe as the system it operates. `sirus scan` parses that code with tree-sitter, traces values
+through it, maps each finding to a compliance clause and prices the exposure:
 
 ```bash
-sirus scan .
-```
-
-Or, from a clone of this repository, the bundled vulnerable fixture:
-
-```bash
-git clone https://github.com/SruSanCyborg/FINSEC_CLI_Sirus && cd FINSEC_CLI_Sirus
-sirus scan contract/fixtures/chaos-repo
+sirus scan .                                  # your project
+sirus scan contract/fixtures/chaos-repo       # or, in a clone of this repo, the planted fixture below
 ```
 
 ```
- ────────────────────────────────────────────────────────────────
-  Findings   ✗ 2 critical   ▲ 2 high   ■ 2 medium
-  Money@risk ₹89,30,000     Compliance 60/100
-  Scanned    3 files
-  Source     local engine · tree-sitter AST analysis
-  Exit 1     severity≥high, fail-on=all → BLOCKED
- ────────────────────────────────────────────────────────────────
+✗ CRITICAL  SIR-SEC-001  Hardcoded Stripe secret key
+   src/config.py:14              PCI-DSS 8.6.2 · RBI-DPSC · DPDP §8 · CWE-798
+   14 │  STRIPE_KEY = "sk_live_51H8…"
+      │               ╰── secret · ₹42,00,000 at risk
+   ↳ fix: env_lookup   run  sirus fix SIR-SEC-001
+   …
+ Findings   ✗ 2 critical   ▲ 2 high   ■ 2 medium
+ Money@risk ₹89,30,000     Compliance 60/100
+ Scanned    3 files
+ Source     local engine · tree-sitter AST analysis
+ Exit 1     severity≥high, fail-on=all → BLOCKED
 ```
 
-Run with no arguments for the interactive shell — every command works as
-`sirus x` and as `/x` inside it:
+Add `--validate-secrets` and Sirus asks the provider whether a key is live, read-only, and reprices it if so.
 
-```bash
-sirus
-```
-
-On a real project:
-
-```bash
-sirus init --project <id>     # writes sirus.yaml + .sirusignore
-sirus scan .
-sirus fix SIR-SEC-001
-sirus report --output report.json
-```
-
----
-
-## How a scan works
-
-Nothing here calls out to a service. The parser, the rules, the taint analysis
-and the money model are all local.
-
-```mermaid
-flowchart TD
-    F["files<br/>.py .js .ts + manifests"] --> P["tree-sitter parse"]
-    P --> T["taint analysis<br/>intra- and inter-procedural"]
-    T --> R["13 compiled rules"]
-    R --> POL{"policy layer"}
-    POL -->|"inline # sirus-ignore"| DROP["withheld"]
-    POL -->|".sirusignore / exclude:"| DROP
-    POL -->|"suppressions with<br/>reason + expiry"| DROP
-    POL -->|"baseline: unchanged"| DROP
-    POL --> FIND["findings"]
-    FIND --> V["--validate-secrets<br/>ask the provider"]
-    V --> M["money model<br/>base x reachability x persistence"]
-    M --> G{"gate<br/>severity-threshold x fail-on"}
-    G -->|clean| E0["exit 0"]
-    G -->|"findings at/above"| E1["exit 1"]
-    FIND --> A["attack paths<br/>entry to target"]
-```
-
-**Taint tracking is the difference between a grep and a scanner.** A query built
-one statement above the sink is invisible to shape-matching:
+Taint tracking is what separates a scanner from a grep. A query built one statement above the sink is still caught, and
+interpolating a module constant is correctly left alone:
 
 ```python
 q = "SELECT * FROM accounts WHERE id = %s" % request.args["id"]
-cur.execute(q)                    # SIR-SEC-010, traced back to request.args
+cur.execute(q)                                   # SIR-SEC-010, traced back to request.args
+
+cur.execute(f"SELECT count(*) FROM {TABLE}")     # no finding
 ```
 
-And interpolating a module constant is *not* an injection, so it is not reported:
+`sirus fix` proposes a patch and **re-runs the rule against it** — a fix is only offered if the finding no longer
+matches, and only machine-applicable fixes are applied without asking (the model `cargo clippy --fix` uses).
 
-```python
-cur.execute(f"SELECT count(*) FROM {TABLE}")   # no finding
-```
+<details>
+<summary><b>All 13 rules</b> — Python, JavaScript and TypeScript</summary>
 
----
-
-## The fix pipeline
-
-`sirus fix` shows the provenance of every change before it touches a file. The
-verifier re-runs the rule against the patched source — a fix is only accepted if
-the rule that produced the finding no longer matches.
-
-```mermaid
-flowchart LR
-    FIND["finding"] --> SEL["template selector"]
-    SEL --> DIFF["diff builder"]
-    DIFF --> VER{"verifier<br/>re-runs the rule"}
-    VER -->|"no match"| PASS["✓ PASS"]
-    VER -->|"still matches"| FAIL["✗ FAIL — not offered"]
-    PASS --> APP{"applicability"}
-    APP -->|"machine-applicable"| AUTO["applied"]
-    APP -->|"maybe-incorrect<br/>has-placeholders"| SKIP["shown, skipped<br/>--unsafe-fixes to apply"]
-```
-
-```
-  ╭─ Cerebus fix · SIR-SEC-001 ──────────────────────────────────────────────╮
-  │ template selector → env_lookup → target STRIPE_KEY                       │
-  │ diff builder      → template: env_lookup                                 │
-  │ verifier          → re-ran SIR-SEC-001, no match — nothing would select   │
-  │                     it again → ✓ PASS                                     │
-  │ applicability     → machine-applicable — applied without asking          │
-  ╰──────────────────────────────────────────────────────────────────────────╯
-```
-
-The applicability tiers follow rustc's model, the one `cargo clippy --fix` uses:
-only **machine-applicable** changes are applied without being asked for.
-
----
-
-## The revenue surface
-
-`scan` prices money at risk in code. `revenue` prices it in operations — failed
-payments, abandoned checkouts, ageing receivables — and `reconcile` matches three
-sets of books that disagree.
-
-```bash
-sirus revenue gen batch && sirus revenue detect batch
-sirus revenue eval batch          # held-out metrics, including what being wrong cost
-sirus revenue recover batch       # bounded workflow + signed audit trail
-sirus reconcile books --gen && sirus reconcile books
-```
-
-```mermaid
-flowchart TD
-    B["batch of records"] --> S["score<br/>L2 logistic + calibration"]
-    S --> RANK["rank by expected recovery<br/>score x amount x recovery share"]
-    RANK --> CAP{"capacity cap<br/>not a cost cap"}
-    CAP --> ACT["work the queue"]
-    ACT --> RULES{"stopping rules"}
-    RULES -->|"quiet_hours"| REF["refused — logged"]
-    RULES -->|"consent — DPDP 2023 §6"| REF
-    RULES -->|"mandate_cap — NPCI NACH"| REF
-    RULES -->|"contact_frequency — TRAI"| REF
-    RULES -->|"budget · retry cap · hold"| REF
-    RULES -->|"allowed"| DO["simulated action"]
-    DO --> TRAIL["hash-chained, signed audit trail"]
-    REF --> TRAIL
-```
-
-Four rules this surface does not bend:
-
-- **The target is uplift, not recovery.** Money that would have arrived anyway is
-  subtracted everywhere, including from the headline.
-- **Capacity, not cost, is the constraint.** Retry ratios, NACH limits and TRAI
-  contact rules are real; an SMS costing ₹0.18 is not.
-- **Refusing is a first-class action.** "Considered and left alone" must be
-  distinguishable from "never looked", so refusals produce audit entries too.
-- **The thresholds belong to the project.** Capacity, budget, quiet hours and the
-  cost model live in `sirus.yaml`. The *basis* is not configurable: a team sets
-  its threshold, not the obligation the threshold answers to.
-
-Everything is simulated and says so. There is no `--execute`.
-
----
-
-## Proof
-
-A signature says a report was not altered. It says nothing about whether a
-*different* report was signed in its place, or an inconvenient one deleted. That
-is what the ledger is for.
-
-```mermaid
-flowchart LR
-    SCAN["scan"] --> REP["report<br/>canonical JSON"]
-    REP --> SIG["ed25519 signature<br/>key_id = fingerprint(public key)"]
-    SIG --> LED["append-only Merkle log<br/>RFC 6962"]
-    LED --> I["report --verify<br/>inclusion proof in log(n) hashes"]
-    LED --> C["ledger verify<br/>every prefix consistent"]
-```
-
-```bash
-sirus report --output report.json
-sirus report --verify report.json --key <fingerprint>
-sirus ledger verify
-```
-
-Reports are checked the same way as the decision trail: `key_id` is derived from the embedded public key, never
-read as a label (see [The decisions are the product](#the-decisions-are-the-product)).
-
----
-
-## Rules
-
-`SIR-SEC-NNN`, numbered in blocks of ten by category. Every rule ships with a
-planted example on disk in `contract/fixtures/rule-gallery/`, beside a correct
-counterpart doing the same job — so the fixture proves both that the rule fires
-and that it leaves good code alone.
+<br>
 
 | Rule | Severity | What | Clauses |
 |---|---|---|---|
@@ -523,92 +249,77 @@ and that it leaves good code alone.
 | `SIR-SEC-051` | medium | Money-movement POST without an idempotency key | RBI DPSC |
 | `SIR-SEC-060` | high | Dependency declared outside the registry | PCI-DSS 6.3.2 |
 
-PCI numbers are **v4.0**: injection is `6.2.4` (not v3.2.1's `6.5.1`), MFA into the
-CDE is `8.4.2`, hardcoded keys are `8.6.2`.
+PCI numbers are **v4.0**. Every rule ships with a planted example in
+[`contract/fixtures/rule-gallery/`](contract/fixtures/rule-gallery), beside a correct counterpart that must stay clean.
+Write your own with `sirus rules validate` and `sirus rules test`.
 
-```bash
-sirus rules list                       # the whole catalogue, by category
-sirus rules show SIR-SEC-010           # clauses, fix action, suppression token
-sirus rules validate my-rule.yaml      # schema, vocabularies, clause numbers
-sirus rules test my-rule.yaml          # run it against an annotated fixture
-sirus explain SIR-SEC-001              # where the ₹ figure comes from
-sirus explain score                    # how the compliance score is calculated
-```
+</details>
 
-Rules fire on **Python, JavaScript and TypeScript**. Three rules that match the
-Python decorator idiom (`@app.route`) declare `python` only, rather than
-advertising a language they would quietly do nothing in.
+<details>
+<summary><b>How a scan works</b></summary>
 
----
-
-## Commands
+<br>
 
 ```mermaid
 flowchart TD
-    subgraph FIND["find"]
-        scan --> triage
-        triage --> fix
-        scan --> explain
-        scan --> watch
-    end
-    subgraph POLICY["decide"]
-        baseline
-        suppress
-        rules
-    end
-    subgraph PROVE["prove"]
-        report --> ledger
-        report --> badge
-    end
-    subgraph MONEY["operations"]
-        revenue --> reconcile
-    end
-    subgraph SETUP["set up"]
-        init --> doctor
-        login
-    end
+    F["files<br/>.py .js .ts + manifests"] --> P["tree-sitter parse"]
+    P --> T["taint analysis<br/>intra- and inter-procedural"]
+    T --> R["13 compiled rules"]
+    R --> POL{"policy layer"}
+    POL -->|"inline ignores · .sirusignore<br/>suppressions · baseline"| DROP["withheld"]
+    POL --> FIND["findings"]
+    FIND --> M["money model<br/>base × reachability × persistence"]
+    M --> G{"gate<br/>severity-threshold × fail-on"}
+    G -->|clean| E0["exit 0"]
+    G -->|"findings at/above"| E1["exit 1"]
 ```
 
-| Command | What it does |
-|---|---|
-| `brief` | Explain the whole project in one document — PDF, or `--plain` on screen |
-| `guard [gen\|eval\|explain\|agents\|score\|trail]` | Govern an agent that can move money |
-| `scan [path]` | Stream findings, price them, gate on them |
-| `fix <rule>` | Apply a verified fix, showing its provenance |
-| `triage` | Decide about each finding, one keypress each — inline in the shell |
-| `watch [path]` | Re-scan on file change |
-| `explain [rule\|score]` | Where a number came from |
-| `rules list\|show\|validate\|test` | The catalogue, offline |
-| `baseline` · `suppress` | What is already accepted, and what is excused |
-| `report` · `ledger` · `badge` | Signed proof, its history, and an SVG |
-| `revenue` · `reconcile` | The operations side |
-| `init` · `login` · `logout` · `doctor` | Scaffolding, credentials, and a pre-flight check |
-| `shell` | The interactive shell (also what `sirus` with no arguments opens) |
-| `serve` | Run the local engine over HTTP + WebSocket, for the desktop app |
+Nothing calls out to a service: the parser, rules, taint analysis and money model are all local.
 
-Every command has `--help`, and `sirus --help` lists them all. Start with `sirus doctor` — it reports against the mode the scan will actually
-run in, self-tests both engines, and ends with the command to run next.
+</details>
 
----
+## Revenue and reconciliation
 
-## Using it in CI
+`scan` prices money at risk in code; `revenue` prices it in operations — failed payments, abandoned checkouts, ageing
+receivables — and `reconcile` matches three sets of books that disagree.
 
-Exit codes follow Snyk's convention:
+```bash
+sirus revenue gen batch && sirus revenue detect batch
+sirus revenue eval batch             # held-out metrics, including what being wrong cost
+sirus revenue recover batch          # bounded recovery workflow + signed audit trail
+sirus reconcile books --gen && sirus reconcile books
+```
+
+It measures **uplift, not recovery** (money that would have arrived anyway is subtracted everywhere), works under a
+**capacity cap**, and treats **refusing as a first-class action** — every action stopped by quiet hours, consent
+(DPDP 2023 §6), NACH mandate limits or TRAI contact rules is logged. Everything is simulated and says so; there is no
+`--execute`. The model and its honest results are in [`docs/revenue.md`](docs/revenue.md).
+
+## Signed reports
+
+```bash
+sirus report --output report.json                        # ed25519-signed, with the compliance score
+sirus report --verify report.json --key <fingerprint>    # exits 0 / 1 / 2
+sirus ledger verify                                      # the history only ever appended
+```
+
+A signature proves a report was not altered; it says nothing about whether a different report was signed in its place.
+So every report is also entered into an append-only **RFC 6962 Merkle log**, where `report --verify` proves inclusion
+and `ledger verify` proves no entry was rewritten or removed.
+
+## Use it in CI
+
+Exit codes follow Snyk's convention, so a pipeline can tell a blocked gate from a typo:
 
 | Code | Meaning |
 |---|---|
 | `0` | Clean |
-| `1` | Findings at or above the threshold — **action needed, not an error** |
+| `1` | Findings at or above the threshold — action needed, not an error |
 | `2` | CLI or execution failure (bad flag, auth, parse) |
 | `3` | No supported target found |
 
-```bash
-sirus scan . --severity-threshold high --fail-on all --sarif results.sarif
-```
-
-In GitHub Actions, with results shown in the repository's Security tab:
-
 ```yaml
+# .github/workflows/sirus.yml — results appear in the repository's Security tab
 name: sirus
 on: [push, pull_request]
 permissions:
@@ -629,40 +340,30 @@ jobs:
           sarif_file: sirus.sarif
 ```
 
-`1` and `2` are deliberately distinct: a pipeline must be able to tell a blocked
-gate from a typo. The escape hatch, if you are not ready to block, is
-`sirus scan . || true` — and because a malformed flag exits `2`, that hatch will
-not silently swallow one.
-
-Useful flags:
+<details>
+<summary>Useful flags</summary>
 
 | Flag | Effect |
 |---|---|
-| `--json` · `--sarif <file>` | Machine output; `--json` owns stdout |
+| `--json` · `--sarif <file>` | Machine-readable output |
 | `--severity-threshold <level>` | `critical` `high` `medium` `low` `info` |
 | `--fail-on <predicate>` | `all` · `new` · `verified-secrets` |
 | `--diff` | Only findings not in the baseline |
 | `--validate-secrets` | Ask the provider whether a credential is live (read-only) |
-| `--ruleset p/<name>` | `p/fintech-core` is everything; `p/<category>` is one |
+| `--ruleset p/<name>` | `p/fintech-core` is everything; `p/<category>` is one category |
 | `--replay <file>` | Replay a recorded run — no engine, no network |
 
----
+</details>
 
 ## Configuration
 
-Precedence, highest first:
+`sirus init` scaffolds a commented `sirus.yaml`. Settings resolve in this order, highest first:
 
 ```
-CLI flags  >  env (SIRUS_*)  >  .siruslintrc (nearest dir, walking up)
-           >  sirus.yaml (project root)  >  ~/.config/sirus/config.toml  >  defaults
+CLI flags  >  SIRUS_* env  >  .siruslintrc  >  sirus.yaml  >  ~/.config/sirus/config.toml  >  defaults
 ```
 
-`sirus init` scaffolds `sirus.yaml` with comments explaining each threshold —
-including which numbers are yours to set and which are not. An unrecognised key
-is reported rather than ignored, because a misspelled gate key means the gate
-silently does not exist.
-
-Three suppression layers, all of which change the totals as well as the list:
+Findings can be suppressed three ways, and each one changes the totals as well as the list:
 
 ```python
 API_KEY = "..."   # sirus-ignore: SIR-SEC-001
@@ -673,117 +374,82 @@ sirus suppress SIR-SEC-002 --reason "test fixture, not a live key" --expires 202
 echo "vendor/" >> .sirusignore
 ```
 
-Suppressions require a reason and an ISO-8601 expiry, and an expired one restores
-the finding with a notice.
+Suppressions require a reason and an expiry; an expired one brings the finding back with a notice.
 
----
-
-## Terminal behaviour
-
-Everything is laid out against the real terminal width — tables take their columns
-from the content, and the nominated column gives way when a row does not fit.
-Money is never shortened: a clipped sentence announces itself, a clipped rupee
-figure does not.
+<details>
+<summary>Terminal settings</summary>
 
 | Variable | Effect |
 |---|---|
-| `SIRUS_ASCII=1` | Full ASCII output — `₹` becomes `Rs.`, box drawing becomes `+-\|` |
-| `NO_COLOR=1` | No colour (the standard convention) |
-| `SIRUS_SCAN_PACE` · `SIRUS_REVENUE_PACE` | Output pacing in ms; `0` disables |
-| `SIRUS_REPLAY_SPEED` | Replay speed; `0` is instant |
+| `SIRUS_ASCII=1` | Pure ASCII output — `₹` becomes `Rs.`, box drawing becomes `+-\|` |
+| `NO_COLOR=1` | No colour |
+| `SIRUS_SCAN_PACE` · `SIRUS_REVENUE_PACE` | Output pacing in ms; `0` disables (off automatically for `--json`, pipes and CI) |
 
-Pacing is off automatically for `--json`, pipes and CI — a pipeline must not pay
-deliberate delay to look good for nobody.
+</details>
 
----
+## Commands
+
+Run `sirus` with no arguments for the interactive shell, where every command also works as `/command`.
+
+| Command | What it does |
+|---|---|
+| `guard` | Judge an agent's proposed actions: `gen` · `eval` · `explain` · `agents` · `score` · `trail` |
+| `scan [path]` | Stream findings, price them, gate on them |
+| `fix <rule>` | Apply a verified fix, showing its provenance |
+| `triage` | Accept, dismiss or suppress each finding, one keypress each |
+| `watch [path]` | Re-scan whenever a file changes |
+| `explain [rule\|score]` | Show where a number came from |
+| `rules` | `list` · `show` · `validate` · `test` the rule catalogue |
+| `baseline` · `suppress` | Record what is already accepted, and what is excused |
+| `report` · `ledger` · `badge` | Signed reports, their history, and a README badge |
+| `revenue` · `reconcile` | Money at risk in operations |
+| `brief` | The whole project in one document — a PDF, or `--plain` on screen |
+| `init` · `login` · `doctor` | Project setup, credentials, and a pre-flight check |
+
+Every command has `--help`.
+
+## Documentation
+
+| | |
+|---|---|
+| [`docs/guard.md`](docs/guard.md) | The agent control layer in depth |
+| [`docs/system-overview.md`](docs/system-overview.md) | Architecture, contract and rules |
+| [`docs/cli-surface.md`](docs/cli-surface.md) | The full CLI specification |
+| [`docs/revenue.md`](docs/revenue.md) | The revenue model and its results |
+| [`docs/decisions.md`](docs/decisions.md) | Every design decision, with the reasoning |
+| [`AGENTS.md`](AGENTS.md) | Orientation for contributors |
 
 ## Development
 
 ```bash
 pnpm install
-pnpm --filter @srusan/sirus build       # tsc → packages/cli/dist
-pnpm --filter @srusan/sirus test        # vitest — 871 tests
-pnpm mock                        # Prism REST :4010 + WS replay :4011
-pnpm contract:lint               # redocly lint
-pnpm rehearse                    # drive the real shell in a real pty
-pnpm shell:check                 # every slash command, dispatched by the shell
+pnpm build          # tsc → packages/cli/dist
+pnpm test           # vitest — 871 tests
+pnpm rehearse       # drive the real shell in a real terminal
 ```
+
+<details>
+<summary>Repository layout and releasing</summary>
+
+<br>
 
 | Path | What |
 |---|---|
-| `packages/cli/` | The CLI — Ink + TypeScript |
 | `packages/cli/src/guard/` | The agent control layer — stages, verdicts, baselines, trail |
-| `packages/cli/src/engine/` | Parser, rules, taint, money model, signing, ledger |
-| `packages/cli/src/revenue/` | Scoring, capacity, policy, audit trail |
-| `contract/` | OpenAPI spec, mock server, and the fixtures |
-| `contract/fixtures/rule-gallery/` | One planted example per rule, beside a clean counterpart |
-| `docs/` | PRD, system overview, CLI spec, and the decision log |
+| `packages/cli/src/engine/` | Parser, rules, taint analysis, money model, signing, ledger |
+| `packages/cli/src/revenue/` | Scoring, capacity, recovery policy, audit trail |
+| `contract/` | OpenAPI spec, mock server and fixtures |
+| `docs/` | Design documents and the decision log |
 
-### Releasing
+Releases are published from GitHub Actions ([`release.yml`](.github/workflows/release.yml)) with npm trusted publishing
+and provenance: bump `version` in `packages/cli/package.json`, then push a matching `v*` tag.
 
-Releases go to npm from GitHub Actions ([`release.yml`](.github/workflows/release.yml)) through npm **trusted
-publishing**: no token is stored anywhere, and every version carries a provenance badge proving it was built from this repository.
-
-```bash
-# bump "version" in packages/cli/package.json, e.g. 0.4.0 -> 0.4.1
-git commit -am "Release 0.4.1"
-git tag v0.4.1 && git push && git push origin v0.4.1
-```
-
-The workflow builds, runs the full test suite, checks that the tag matches the package version, and publishes.
-To publish by hand instead, run `npm publish` from **`packages/cli`**, never from the repository root (the root is the
-private workspace). [`ci.yml`](.github/workflows/ci.yml) also packs the package and installs it globally on every push,
-so a broken `sirus` command is caught before a release.
-
-### Things this project takes seriously
-
-**"Implemented" is not "works".** Several features were once listed as done while
-being unreachable in the configuration everything defaults to. Every one was found
-by *running* the binary, never by the test suite. Two habits follow: `pnpm rehearse`
-drives the real shell in a real pty before anything is believed, and a status row
-says what was verified rather than what was written.
-
-**A test that has not been seen to fail has not been shown to test anything.**
-Regression tests here are checked by reverting the fix and watching them go red.
-
-**Layout gives way; content does not.** A column may narrow, a row may stack, a
-value may wrap. Nothing is shortened into something that still reads as a valid
-value.
-
----
-
-## Documentation
-
-- [`AGENTS.md`](AGENTS.md) — orientation for contributors; start here
-- [`docs/system-overview.md`](docs/system-overview.md) — architecture, contract, rules
-- [`docs/cli-surface.md`](docs/cli-surface.md) — the CLI specification
-- [`docs/revenue.md`](docs/revenue.md) — the revenue model and its honest findings
-- [`docs/decisions.md`](docs/decisions.md) — every decision, with the reasoning
-- [`docs/original-prd.md`](docs/original-prd.md) — the full original PRD
-
----
-
-## Status
-
-| Area | State |
-|---|---|
-| `guard` | Done — six stages, graduated verdicts, per-agent baselines, signed decision trail. 95% autonomy on the fixture with every planted attack stopped |
-| `brief` | Done — a six-page PDF written from a live run, or the same argument on screen with `--plain` |
-| Local engine | Real — tree-sitter AST, 13 rules, taint tracking, money model |
-| `scan` · `fix` · `triage` · `watch` | Done, streaming, paced, with exit codes |
-| `rules` · `baseline` · `suppress` | Done, fully offline |
-| `report` · `ledger` · `badge` | Done — ed25519 signing, RFC 6962 Merkle log |
-| `revenue` · `reconcile` | Done — held-out metrics, bounded recovery, signed trail |
-| Distribution | Published on npm as [`@srusan/sirus`](https://www.npmjs.com/package/@srusan/sirus); Windows, macOS and Linux (Node.js 22+) |
-| Tests | 871 passing, on every push in CI |
-
-**The API is required for nothing.** The CLI began as a pure client of a REST
-contract and still speaks it, but every command works with no backend running.
+</details>
 
 ---
 
 <p align="center">
-  <b>Sirus</b> is an open-source project by <b>SruSan</b>, made by <b>Sanjay Sivakumar</b><br>
-  <a href="https://github.com/SruSanCyborg">GitHub</a> · <a href="https://www.linkedin.com/in/sanjaysivakumar11/">LinkedIn</a> · <a href="LICENSE">MIT licence</a><br>
-  <sub>Fintech compliance scanning, priced in rupees.</sub>
+  <b>Sirus</b> is built by <a href="https://github.com/SruSanCyborg"><b>Sanjay Sivakumar</b></a> (SruSan)
+  · <a href="https://www.linkedin.com/in/sanjaysivakumar11/">LinkedIn</a>
+  · <a href="LICENSE">MIT License</a>
 </p>

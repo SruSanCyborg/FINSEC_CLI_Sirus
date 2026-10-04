@@ -2,45 +2,54 @@
   <img src="https://raw.githubusercontent.com/SruSanCyborg/FINSEC_CLI_Sirus/main/media/sirus-hero.svg" width="100%" alt="Sirus by SruSan">
 </p>
 
-# Sirus, by SruSan
-
 <p align="center">
-  <img src="https://raw.githubusercontent.com/SruSanCyborg/FINSEC_CLI_Sirus/main/media/sirus-demo.gif" alt="sirus running in a terminal" width="640">
+  <b>Decide, per action, whether an AI agent should be allowed to move money — and keep a signed record of every decision.</b>
 </p>
 
-**A security and control layer for AI agents that can move money, and a compliance linter for the code they run on.**
-It runs entirely on your machine: no backend, no network, no account.
+<p align="center">
+  <a href="https://github.com/SruSanCyborg/FINSEC_CLI_Sirus">GitHub</a> ·
+  <a href="https://github.com/SruSanCyborg/FINSEC_CLI_Sirus#how-guard-decides">How it decides</a> ·
+  <a href="https://github.com/SruSanCyborg/FINSEC_CLI_Sirus/blob/main/media/sirus-demo.mp4">Demo video</a>
+</p>
+
+**Sirus** sits between an autonomous agent and the money. It judges each proposed action, lets routine work through
+untouched, and stops the ones that should not happen — without a human approving every payment. It also scans the code
+the agent runs on, maps each finding to a compliance clause, and prices the exposure in rupees.
+
+- **Graduated verdicts** — `ALLOW`, `VERIFY`, `CONSTRAIN` or `BLOCK`
+- **Six checks** — identity, intent, policy, context, behaviour and prompt injection
+- **Tamper-evident** — every decision is hash-chained and ed25519-signed
+- **Code scanning** — tree-sitter and taint analysis, mapped to PCI-DSS v4.0, RBI, DPDP and GDPR
+- **Fully local** — no backend, no network, no account
 
 ## Install
 
-Needs [Node.js](https://nodejs.org) 22 or newer.
+Requires [Node.js](https://nodejs.org) 22 or newer. Works on macOS, Linux and Windows.
 
 ```bash
-# try it without installing
-npx @srusan/sirus --help
-
-# or install the `sirus` command globally
-npm install -g @srusan/sirus
-sirus --help
+npx @srusan/sirus                # run without installing
+npm install -g @srusan/sirus     # or install the `sirus` command
 ```
 
-Also works with `pnpm add -g @srusan/sirus`, `yarn global add @srusan/sirus` and `bunx @srusan/sirus`.
+Also available through `pnpm add -g`, `yarn global add` and `bunx`.
 
 ## Quick start
 
 ```bash
-sirus              # interactive shell
-sirus init         # scaffold sirus.yaml in your project
-sirus scan .       # scan the current project for money-handling risks
-sirus guard        # decide, per action, whether an agent's transaction should happen
-sirus revenue gen  # generate a sample batch, then detect / eval / recover / audit
-sirus doctor       # check your setup
+sirus guard gen feed             # a day of agent payments, with attacks planted
+sirus guard eval feed --narrate  # judge every action, explained
+sirus scan .                     # scan your project
+sirus doctor                     # check your setup
 ```
 
-Every command has `--help`. The full documentation, demo video and design notes are on
+```
+  Decisions   264 allowed (95%)   2 step-up   1 constrained   11 blocked
+  Autonomy    95.0% of actions proceeded with nobody asked
+```
+
+Run `sirus` on its own for the interactive shell. Every command has `--help`; full documentation is on
 [GitHub](https://github.com/SruSanCyborg/FINSEC_CLI_Sirus).
 
-## Author
+## License
 
-Made by **Sanjay Sivakumar** ([SruSan](https://github.com/SruSanCyborg)) ·
-[LinkedIn](https://www.linkedin.com/in/sanjaysivakumar11/) · MIT licence.
+MIT © [Sanjay Sivakumar](https://github.com/SruSanCyborg) (SruSan)
